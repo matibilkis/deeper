@@ -29,7 +29,7 @@ class Memory():
 
 
 
-cardinality_betas = 100
+cardinality_betas = len(basic.actions[0])
 
 class QN_l1(tf.keras.Model):
     def __init__(self):
@@ -108,7 +108,7 @@ qn_guess_targ = QN_guess()
 
 
 
-def give_first_beta():
+def give_first_beta(epsilon):
     if np.random.random() < epsilon:
         beta1 = np.random.choice(basic.actions[0])
         return beta1
@@ -120,8 +120,7 @@ def give_first_beta():
         beta1 = basic.actions[0][label]
         return beta1
 
-
-def give_second_beta(new_state):
+def give_second_beta(new_state, epsilon):
     if np.random.random() < epsilon:
         beta2 = np.random.choice(basic.actions[1])
         return beta2
@@ -134,7 +133,7 @@ def give_second_beta(new_state):
         return beta1
 
 
-def give_guess(new_state):
+def give_guess(new_state, epsilon):
     if np.random.random() < epsilon:
         guess = np.random.choice(basic.possible_phases,1)[0]
         return guess
@@ -150,25 +149,23 @@ def give_guess(new_state):
 buffer = Memory(10**4)
 
 alpha = .56
-states_wasted = 10**4
+states_wasted = 10**3
 
 def main():
     for episode in range(states_wasted):
+        epsilon = np.exp(-0.001*episode)
         phase = np.random.choice([-1,1],1)[0]
-        beta1 = give_first_beta()
+        beta1 = give_first_beta(epsilon)
         p0 = np.exp(-(beta1-(phase*np.cos(ats[0])*alpha))**2)
         outcome1 = np.random.choice([0,1],1,p=[p0,1-p0])[0]
         new_state = [outcome1, beta1]
-        beta2 = give_second_beta(new_state)
+        beta2 = give_second_beta(new_state,epsilon)
         p1 = np.exp(-(beta2-(phase*np.sin(ats[0])*alpha))**2)
         outcome2 = np.random.choice([0,1],1,p=[p1,1-p1])[0]
         new_state = [outcome1, outcome2, beta1, beta2]
-        guess = give_guess(new_state)
+        guess = give_guess(new_state,epislon)
         if guess == phase:
             reward = 1
         else:
             reward = 0
         buffer.add_sample((outcome1, outcome2, beta1, beta2, guess, reward))
-
-main()
-buffer.sample(30)
