@@ -135,21 +135,119 @@ def give_second_beta(new_state, epsilon):
 def give_guess(new_state, epsilon):
     if np.random.random() < epsilon:
         guess = np.random.choice(basic.possible_phases,1)[0]
-        return guess
+        return int((guess+1)/2), guess
     else:
         input = np.expand_dims(np.array(new_state), axis=0)
         qguess = qn_guess_prim(input)
         guess = qguess.numpy()
         label = np.argmax(guess)
         guess = basic.possible_phases[label]
-        return guess
+        return int((guess+1)/2), guess
+
+
+
+
+def learn():
+    batch_length=32
+    batch = buffer.sample(batch_length)
+
+    s_2_batch = np.array([[ v[0], v[2]] for v in batch ] )
+    labels_beta1 = np.array([v[4] for v in batch])
+
+    q_2_prim = qn_l2_prim(np.expand_dims(s_2_batch, axis=0))
+    q_2_prim = np.squeeze(q_2_prim.numpy())
+
+    opt_a_2_prim = np.argmax(q_2_prim,axis=1)
+
+    update_for_q_1_prim = qn_l1_targ(np.expand_dims(np.array([[] for i in range(len(batch))]), axis=0)) #targ = target
+    update_for_q_1_prim = np.squeeze(update_for_q_1_prim, axis=0)
+    qlabels_l1 = update_for_q_1_prim.copy()
+    qlabels_l1[np.arange(batch_length), labels_beta1] = np.squeeze(qn_l2_targ(np.expand_dims(s_2_batch, axis=0)).numpy())[np.arange(batch_length),opt_a_2_prim]
+
+
+
+    with tf.device("/cpu:0"):
+        with tf.GradientTape() as tape:
+            tape.watch(qn_l1_prim.trainable_variables)
+            pred_q_1s = qn_l1_prim(np.expand_dims(np.array([[] for i in range(len(batch))]), axis=0))
+
+            loss_sum =tf.keras.losses.MSE(pred_q_1s, qlabels_l1)
+            loss = tf.reduce_mean(loss_sum)
+
+            grads = tape.gradient(loss, qn_l1_prim.trainable_variables)
+
+            optimizer_ql1.apply_gradients(zip(grads, qn_l1_prim.trainable_variables))
+
+    s_2_batch = np.array([[v[0], v[2]] for v in batch])
+    s_3_batch = np.array([[v[0], v[1], v[2], v[3]] for v in batch])
+
+    #labels_guess = np.array([v[7] for v in batch])
+    labels_action_2 = np.array([v[5] for v in batch])
+
+    q_3_prim = qn_guess_prim(np.expand_dims(s_3_batch, axis=0))
+    q_3_prim = np.squeeze(q_3_prim.numpy())
+
+    opt_a_3_prim = np.argmax(q_3_prim, axis=1)
+
+    update_for_q_2_prim = qn_l2_targ(np.expand_dims(s_2_batch, axis=0))
+    update_for_q_2_prim = np.squeeze(update_for_q_2_prim, axis=0)
+    qlabels_l2 = update_for_q_2_prim.copy()
+    qlabels_l2[np.arange(batch_length), labels_action_2] = np.squeeze(qn_guess_targ(np.expand_dims(s_3_batch, axis=0)).numpy())[np.arange(batch_length), opt_a_3_prim]
+
+
+    with tf.device("/cpu:0"):
+        with tf.GradientTape() as tape:
+            tape.watch(qn_l2_prim.trainable_variables)
+            pred_q_2s = qn_l2_prim(np.expand_dims(s_2_batch, axis=0))
+            loss_sum =tf.keras.losses.MSE(pred_q_2s, qlabels_l2)
+            loss = tf.reduce_mean(loss_sum)
+
+            grads = tape.gradient(loss, qn_l2_prim.trainable_variables)
+            optimizer_ql2.apply_gradients(zip(grads, qn_l2_prim.trainable_variables))
+
+
+    s_3_batch = np.array([[v[0], v[1], v[2], v[3]] for v in batch])
+    rewards = np.array([v[-1] for v in batch])
+    labels_guess = np.array([v[7] for v in batch])
+
+    update_for_q_3_prim = qn_guess_targ(np.expand_dims(s_3_batch, axis=0))
+    update_for_q_3_prim = np.squeeze(update_for_q_3_prim, axis=0)
+    qlabels_l3 = update_for_q_3_prim.copy()
+    qlabels_l3[np.arange(batch_length), labels_guess] = rewards[np.arange(batch_length)]
+
+
+    with tf.device("/cpu:0"):
+        with tf.GradientTape() as tape:
+            tape.watch(qn_guess_prim.trainable_variables)
+            pred_q_3s = qn_guess_prim(np.expand_dims(s_3_batch, axis=0))
+            loss_sum =tf.keras.losses.MSE(pred_q_3s, qlabels_l3)
+            loss = tf.reduce_mean(loss_sum)
+
+            grads = tape.gradient(loss, qn_guess_prim.trainable_variables)
+            optimizer_ql3.apply_gradients(zip(grads, qn_guess_prim.trainable_variables))
+
+    for t, e in zip(qn_l1_targ.trainable_variables, qn_l1_prim.trainable_variables):
+        t.assign(t*(1-TAU) + e*TAU)
+
+    for t, e in zip(qn_l2_targ.trainable_variables, qn_l2_prim.trainable_variables):
+        t.assign(t*(1-TAU) + e*TAU)
+
+    for t, e in zip(qn_guess_targ.trainable_variables, qn_guess_prim.trainable_variables):
+        t.assign(t*(1-TAU) + e*TAU)
+    return
+
 
 
 buffer = Memory(10**4)
+optimizer_ql1 = tf.keras.optimizers.Adam(lr=0.001)
+optimizer_ql2 = tf.keras.optimizers.Adam(lr=0.001)
+optimizer_ql3 = tf.keras.optimizers.Adam(lr=0.001)
 
 alpha = .56
 states_wasted = 10**3
+TAU = 0.08
 
+cum_rews = []
 def main():
     for episode in range(states_wasted):
         epsilon = np.exp(-0.001*episode)
@@ -162,42 +260,14 @@ def main():
         p1 = np.exp(-(beta2-(phase*np.sin(ats[0])*alpha))**2)
         outcome2 = np.random.choice([0,1],1,p=[p1,1-p1])[0]
         new_state = [outcome1, outcome2, beta1, beta2]
-        guess = give_guess(new_state,epsilon)
+        label_guess, guess = give_guess(new_state,epsilon)
         if guess == phase:
             reward = 1
         else:
             reward = 0
-        buffer.add_sample((outcome1, outcome2, beta1, beta2, labelbeta1, labelbeta2, guess, reward))
-
+        buffer.add_sample((outcome1, outcome2, beta1, beta2, labelbeta1, labelbeta2, guess, label_guess, reward))
+        if episode > 10**2:
+            learn()
+        cum_rews.append(np.sum(cum_rews)+reward)
+    return cum_rews/np.arange(1, states_wasted+1)
 main()
-
-batch_length=300
-batch = buffer.sample(batch_length)
-batch
-
-
-states_l2 = np.array([[ v[0], v[2]] for v in batch ] )
-labels_beta1 = np.array([v[4] for v in batch])
-
-layer1p1_normal = qn_l2_prim(np.expand_dims(states_l2, axis=0))
-layer1p1_normal = np.squeeze(layer1p1_normal.numpy())
-
-target_qlp1 = qn_l1_targ(np.expand_dims(np.array([[] for i in range(len(batch))]), axis=0))
-target_qlp1 = np.squeeze(target_qlp1, axis=0)
-targs = target_qlp1.copy()
-targs[np.arange(batch_length), labels_beta1] = np.squeeze(qn_l2_targ(np.expand_dims(states_l2, axis=0)).numpy())[np.arange(batch_length),optimals_beta2_prim_labels]
-
-
-optimizer_ql1 = tf.keras.optimizers.Adam(lr=0.001)
-
-with tf.device("/cpu:0"):
-    with tf.GradientTape() as tape:
-        tape.watch(qn_l1_prim.trainable_variables)
-
-        pred_prim = qn_l1_prim(np.expand_dims(np.array([[] for i in range(len(batch))]), axis=0))
-
-        loss_sum =tf.keras.losses.MSE(pred_prim, targs)
-        loss = tf.reduce_mean(loss_sum)
-
-        grads = tape.gradient(loss, qn_l1_prim.trainable_variables)
-        optimizer_ql1.apply_gradients(zip(grads, qn_l1_prim.trainable_variables))
