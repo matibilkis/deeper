@@ -1,0 +1,1747 @@
+
+% Default to the notebook output style
+
+    
+
+
+% Inherit from the specified cell style.
+
+
+
+
+    
+\documentclass[11pt]{article}
+
+    
+    
+    \usepackage[T1]{fontenc}
+    % Nicer default font (+ math font) than Computer Modern for most use cases
+    \usepackage{mathpazo}
+
+    % Basic figure setup, for now with no caption control since it's done
+    % automatically by Pandoc (which extracts ![](path) syntax from Markdown).
+    \usepackage{graphicx}
+    % We will generate all images so they have a width \maxwidth. This means
+    % that they will get their normal width if they fit onto the page, but
+    % are scaled down if they would overflow the margins.
+    \makeatletter
+    \def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth
+    \else\Gin@nat@width\fi}
+    \makeatother
+    \let\Oldincludegraphics\includegraphics
+    % Set max figure width to be 80% of text width, for now hardcoded.
+    \renewcommand{\includegraphics}[1]{\Oldincludegraphics[width=.8\maxwidth]{#1}}
+    % Ensure that by default, figures have no caption (until we provide a
+    % proper Figure object with a Caption API and a way to capture that
+    % in the conversion process - todo).
+    \usepackage{caption}
+    \DeclareCaptionLabelFormat{nolabel}{}
+    \captionsetup{labelformat=nolabel}
+
+    \usepackage{adjustbox} % Used to constrain images to a maximum size 
+    \usepackage{xcolor} % Allow colors to be defined
+    \usepackage{enumerate} % Needed for markdown enumerations to work
+    \usepackage{geometry} % Used to adjust the document margins
+    \usepackage{amsmath} % Equations
+    \usepackage{amssymb} % Equations
+    \usepackage{textcomp} % defines textquotesingle
+    % Hack from http://tex.stackexchange.com/a/47451/13684:
+    \AtBeginDocument{%
+        \def\PYZsq{\textquotesingle}% Upright quotes in Pygmentized code
+    }
+    \usepackage{upquote} % Upright quotes for verbatim code
+    \usepackage{eurosym} % defines \euro
+    \usepackage[mathletters]{ucs} % Extended unicode (utf-8) support
+    \usepackage[utf8x]{inputenc} % Allow utf-8 characters in the tex document
+    \usepackage{fancyvrb} % verbatim replacement that allows latex
+    \usepackage{grffile} % extends the file name processing of package graphics 
+                         % to support a larger range 
+    % The hyperref package gives us a pdf with properly built
+    % internal navigation ('pdf bookmarks' for the table of contents,
+    % internal cross-reference links, web links for URLs, etc.)
+    \usepackage{hyperref}
+    \usepackage{longtable} % longtable support required by pandoc >1.10
+    \usepackage{booktabs}  % table support for pandoc > 1.12.2
+    \usepackage[inline]{enumitem} % IRkernel/repr support (it uses the enumerate* environment)
+    \usepackage[normalem]{ulem} % ulem is needed to support strikethroughs (\sout)
+                                % normalem makes italics be italics, not underlines
+    
+
+    
+    
+    % Colors for the hyperref package
+    \definecolor{urlcolor}{rgb}{0,.145,.698}
+    \definecolor{linkcolor}{rgb}{.71,0.21,0.01}
+    \definecolor{citecolor}{rgb}{.12,.54,.11}
+
+    % ANSI colors
+    \definecolor{ansi-black}{HTML}{3E424D}
+    \definecolor{ansi-black-intense}{HTML}{282C36}
+    \definecolor{ansi-red}{HTML}{E75C58}
+    \definecolor{ansi-red-intense}{HTML}{B22B31}
+    \definecolor{ansi-green}{HTML}{00A250}
+    \definecolor{ansi-green-intense}{HTML}{007427}
+    \definecolor{ansi-yellow}{HTML}{DDB62B}
+    \definecolor{ansi-yellow-intense}{HTML}{B27D12}
+    \definecolor{ansi-blue}{HTML}{208FFB}
+    \definecolor{ansi-blue-intense}{HTML}{0065CA}
+    \definecolor{ansi-magenta}{HTML}{D160C4}
+    \definecolor{ansi-magenta-intense}{HTML}{A03196}
+    \definecolor{ansi-cyan}{HTML}{60C6C8}
+    \definecolor{ansi-cyan-intense}{HTML}{258F8F}
+    \definecolor{ansi-white}{HTML}{C5C1B4}
+    \definecolor{ansi-white-intense}{HTML}{A1A6B2}
+
+    % commands and environments needed by pandoc snippets
+    % extracted from the output of `pandoc -s`
+    \providecommand{\tightlist}{%
+      \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+    \DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+    % Add ',fontsize=\small' for more characters per line
+    \newenvironment{Shaded}{}{}
+    \newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{{#1}}}}
+    \newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.56,0.13,0.00}{{#1}}}
+    \newcommand{\DecValTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{{#1}}}
+    \newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{{#1}}}
+    \newcommand{\FloatTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{{#1}}}
+    \newcommand{\CharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+    \newcommand{\StringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+    \newcommand{\CommentTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textit{{#1}}}}
+    \newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{{#1}}}
+    \newcommand{\AlertTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{{#1}}}}
+    \newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.02,0.16,0.49}{{#1}}}
+    \newcommand{\RegionMarkerTok}[1]{{#1}}
+    \newcommand{\ErrorTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{{#1}}}}
+    \newcommand{\NormalTok}[1]{{#1}}
+    
+    % Additional commands for more recent versions of Pandoc
+    \newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.53,0.00,0.00}{{#1}}}
+    \newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+    \newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{{#1}}}
+    \newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.73,0.40,0.53}{{#1}}}
+    \newcommand{\ImportTok}[1]{{#1}}
+    \newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.73,0.13,0.13}{\textit{{#1}}}}
+    \newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+    \newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+    \newcommand{\VariableTok}[1]{\textcolor[rgb]{0.10,0.09,0.49}{{#1}}}
+    \newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{{#1}}}}
+    \newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.40,0.40,0.40}{{#1}}}
+    \newcommand{\BuiltInTok}[1]{{#1}}
+    \newcommand{\ExtensionTok}[1]{{#1}}
+    \newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.74,0.48,0.00}{{#1}}}
+    \newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.49,0.56,0.16}{{#1}}}
+    \newcommand{\InformationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+    \newcommand{\WarningTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{{#1}}}}}
+    
+    
+    % Define a nice break command that doesn't care if a line doesn't already
+    % exist.
+    \def\br{\hspace*{\fill} \\* }
+    % Math Jax compatability definitions
+    \def\gt{>}
+    \def\lt{<}
+    % Document parameters
+    \title{learning\_function}
+    
+    
+    
+
+    % Pygments definitions
+    
+\makeatletter
+\def\PY@reset{\let\PY@it=\relax \let\PY@bf=\relax%
+    \let\PY@ul=\relax \let\PY@tc=\relax%
+    \let\PY@bc=\relax \let\PY@ff=\relax}
+\def\PY@tok#1{\csname PY@tok@#1\endcsname}
+\def\PY@toks#1+{\ifx\relax#1\empty\else%
+    \PY@tok{#1}\expandafter\PY@toks\fi}
+\def\PY@do#1{\PY@bc{\PY@tc{\PY@ul{%
+    \PY@it{\PY@bf{\PY@ff{#1}}}}}}}
+\def\PY#1#2{\PY@reset\PY@toks#1+\relax+\PY@do{#2}}
+
+\expandafter\def\csname PY@tok@w\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.73,0.73}{##1}}}
+\expandafter\def\csname PY@tok@c\endcsname{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.25,0.50,0.50}{##1}}}
+\expandafter\def\csname PY@tok@cp\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.74,0.48,0.00}{##1}}}
+\expandafter\def\csname PY@tok@k\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@kp\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@kt\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.69,0.00,0.25}{##1}}}
+\expandafter\def\csname PY@tok@o\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@ow\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.67,0.13,1.00}{##1}}}
+\expandafter\def\csname PY@tok@nb\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@nf\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,1.00}{##1}}}
+\expandafter\def\csname PY@tok@nc\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,1.00}{##1}}}
+\expandafter\def\csname PY@tok@nn\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,1.00}{##1}}}
+\expandafter\def\csname PY@tok@ne\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.82,0.25,0.23}{##1}}}
+\expandafter\def\csname PY@tok@nv\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\expandafter\def\csname PY@tok@no\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.53,0.00,0.00}{##1}}}
+\expandafter\def\csname PY@tok@nl\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.63,0.63,0.00}{##1}}}
+\expandafter\def\csname PY@tok@ni\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.60,0.60,0.60}{##1}}}
+\expandafter\def\csname PY@tok@na\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.49,0.56,0.16}{##1}}}
+\expandafter\def\csname PY@tok@nt\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@nd\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.67,0.13,1.00}{##1}}}
+\expandafter\def\csname PY@tok@s\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@sd\endcsname{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@si\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.73,0.40,0.53}{##1}}}
+\expandafter\def\csname PY@tok@se\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.73,0.40,0.13}{##1}}}
+\expandafter\def\csname PY@tok@sr\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.40,0.53}{##1}}}
+\expandafter\def\csname PY@tok@ss\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\expandafter\def\csname PY@tok@sx\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@m\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@gh\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,0.50}{##1}}}
+\expandafter\def\csname PY@tok@gu\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.50,0.00,0.50}{##1}}}
+\expandafter\def\csname PY@tok@gd\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.63,0.00,0.00}{##1}}}
+\expandafter\def\csname PY@tok@gi\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.63,0.00}{##1}}}
+\expandafter\def\csname PY@tok@gr\endcsname{\def\PY@tc##1{\textcolor[rgb]{1.00,0.00,0.00}{##1}}}
+\expandafter\def\csname PY@tok@ge\endcsname{\let\PY@it=\textit}
+\expandafter\def\csname PY@tok@gs\endcsname{\let\PY@bf=\textbf}
+\expandafter\def\csname PY@tok@gp\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,0.50}{##1}}}
+\expandafter\def\csname PY@tok@go\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.53,0.53,0.53}{##1}}}
+\expandafter\def\csname PY@tok@gt\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.27,0.87}{##1}}}
+\expandafter\def\csname PY@tok@err\endcsname{\def\PY@bc##1{\setlength{\fboxsep}{0pt}\fcolorbox[rgb]{1.00,0.00,0.00}{1,1,1}{\strut ##1}}}
+\expandafter\def\csname PY@tok@kc\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@kd\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@kn\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@kr\endcsname{\let\PY@bf=\textbf\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@bp\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.50,0.00}{##1}}}
+\expandafter\def\csname PY@tok@fm\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.00,0.00,1.00}{##1}}}
+\expandafter\def\csname PY@tok@vc\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\expandafter\def\csname PY@tok@vg\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\expandafter\def\csname PY@tok@vi\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\expandafter\def\csname PY@tok@vm\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.10,0.09,0.49}{##1}}}
+\expandafter\def\csname PY@tok@sa\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@sb\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@sc\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@dl\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@s2\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@sh\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@s1\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.73,0.13,0.13}{##1}}}
+\expandafter\def\csname PY@tok@mb\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@mf\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@mh\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@mi\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@il\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@mo\endcsname{\def\PY@tc##1{\textcolor[rgb]{0.40,0.40,0.40}{##1}}}
+\expandafter\def\csname PY@tok@ch\endcsname{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.25,0.50,0.50}{##1}}}
+\expandafter\def\csname PY@tok@cm\endcsname{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.25,0.50,0.50}{##1}}}
+\expandafter\def\csname PY@tok@cpf\endcsname{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.25,0.50,0.50}{##1}}}
+\expandafter\def\csname PY@tok@c1\endcsname{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.25,0.50,0.50}{##1}}}
+\expandafter\def\csname PY@tok@cs\endcsname{\let\PY@it=\textit\def\PY@tc##1{\textcolor[rgb]{0.25,0.50,0.50}{##1}}}
+
+\def\PYZbs{\char`\\}
+\def\PYZus{\char`\_}
+\def\PYZob{\char`\{}
+\def\PYZcb{\char`\}}
+\def\PYZca{\char`\^}
+\def\PYZam{\char`\&}
+\def\PYZlt{\char`\<}
+\def\PYZgt{\char`\>}
+\def\PYZsh{\char`\#}
+\def\PYZpc{\char`\%}
+\def\PYZdl{\char`\$}
+\def\PYZhy{\char`\-}
+\def\PYZsq{\char`\'}
+\def\PYZdq{\char`\"}
+\def\PYZti{\char`\~}
+% for compatibility with earlier versions
+\def\PYZat{@}
+\def\PYZlb{[}
+\def\PYZrb{]}
+\makeatother
+
+
+    % Exact colors from NB
+    \definecolor{incolor}{rgb}{0.0, 0.0, 0.5}
+    \definecolor{outcolor}{rgb}{0.545, 0.0, 0.0}
+
+
+
+    
+    % Prevent overflowing lines due to hard-to-break entities
+    \sloppy 
+    % Setup hyperref package
+    \hypersetup{
+      breaklinks=true,  % so long urls are correctly broken across lines
+      colorlinks=true,
+      urlcolor=urlcolor,
+      linkcolor=linkcolor,
+      citecolor=citecolor,
+      }
+    % Slightly bigger margins than the latex defaults
+    
+    \geometry{verbose,tmargin=1in,bmargin=1in,lmargin=1in,rmargin=1in}
+    
+    
+
+    \begin{document}
+    
+    
+    \maketitle
+    
+    
+
+    
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}15}]:} \PY{k+kn}{import} \PY{n+nn}{numpy} \PY{k}{as} \PY{n+nn}{np}
+         \PY{k+kn}{import} \PY{n+nn}{basics}
+         \PY{k+kn}{import} \PY{n+nn}{misc}
+         \PY{k+kn}{import} \PY{n+nn}{tensorflow} \PY{k}{as} \PY{n+nn}{tf}
+         \PY{k+kn}{from} \PY{n+nn}{tensorflow}\PY{n+nn}{.}\PY{n+nn}{keras}\PY{n+nn}{.}\PY{n+nn}{layers} \PY{k}{import} \PY{n}{Dense}
+         \PY{k+kn}{import} \PY{n+nn}{random}
+         
+         \PY{n}{basic} \PY{o}{=} \PY{n}{basics}\PY{o}{.}\PY{n}{Basics}\PY{p}{(}\PY{n}{resolution}\PY{o}{=}\PY{o}{.}\PY{l+m+mi}{01}\PY{p}{)}
+         \PY{n}{basic}\PY{o}{.}\PY{n}{define\PYZus{}actions}\PY{p}{(}\PY{p}{)}
+         \PY{n}{actions} \PY{o}{=} \PY{n}{basic}\PY{o}{.}\PY{n}{actions}
+         \PY{n}{ats} \PY{o}{=} \PY{n}{misc}\PY{o}{.}\PY{n}{make\PYZus{}attenuations}\PY{p}{(}\PY{n}{layers}\PY{o}{=}\PY{l+m+mi}{2}\PY{p}{)}
+         
+         \PY{k}{class} \PY{n+nc}{Memory}\PY{p}{(}\PY{p}{)}\PY{p}{:}
+             \PY{k}{def} \PY{n+nf}{\PYZus{}\PYZus{}init\PYZus{}\PYZus{}}\PY{p}{(}\PY{n+nb+bp}{self}\PY{p}{,} \PY{n}{max\PYZus{}memory}\PY{p}{)}\PY{p}{:}
+                 \PY{n+nb+bp}{self}\PY{o}{.}\PY{n}{\PYZus{}max\PYZus{}memory} \PY{o}{=} \PY{n}{max\PYZus{}memory}
+                 \PY{n+nb+bp}{self}\PY{o}{.}\PY{n}{\PYZus{}samples} \PY{o}{=} \PY{p}{[}\PY{p}{]}
+             \PY{k}{def} \PY{n+nf}{add\PYZus{}sample}\PY{p}{(}\PY{n+nb+bp}{self}\PY{p}{,} \PY{n}{sample}\PY{p}{)}\PY{p}{:}
+                 \PY{n+nb+bp}{self}\PY{o}{.}\PY{n}{\PYZus{}samples}\PY{o}{.}\PY{n}{append}\PY{p}{(}\PY{n}{sample}\PY{p}{)}
+                 \PY{k}{if} \PY{n+nb}{len}\PY{p}{(}\PY{n+nb+bp}{self}\PY{o}{.}\PY{n}{\PYZus{}samples}\PY{p}{)} \PY{o}{\PYZgt{}} \PY{n+nb+bp}{self}\PY{o}{.}\PY{n}{\PYZus{}max\PYZus{}memory}\PY{p}{:}
+                     \PY{n+nb+bp}{self}\PY{o}{.}\PY{n}{\PYZus{}samples}\PY{o}{.}\PY{n}{pop}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{)}
+             \PY{k}{def} \PY{n+nf}{sample}\PY{p}{(}\PY{n+nb+bp}{self}\PY{p}{,} \PY{n}{no\PYZus{}samples}\PY{p}{)}\PY{p}{:}
+                 \PY{k}{if} \PY{n}{no\PYZus{}samples} \PY{o}{\PYZgt{}} \PY{n+nb}{len}\PY{p}{(}\PY{n+nb+bp}{self}\PY{o}{.}\PY{n}{\PYZus{}samples}\PY{p}{)}\PY{p}{:}
+                     \PY{k}{return} \PY{n}{random}\PY{o}{.}\PY{n}{sample}\PY{p}{(}\PY{n+nb+bp}{self}\PY{o}{.}\PY{n}{\PYZus{}samples}\PY{p}{,} \PY{n+nb}{len}\PY{p}{(}\PY{n+nb+bp}{self}\PY{o}{.}\PY{n}{\PYZus{}samples}\PY{p}{)}\PY{p}{)}
+                 \PY{k}{else}\PY{p}{:}
+                     \PY{k}{return} \PY{n}{random}\PY{o}{.}\PY{n}{sample}\PY{p}{(}\PY{n+nb+bp}{self}\PY{o}{.}\PY{n}{\PYZus{}samples}\PY{p}{,} \PY{n}{no\PYZus{}samples}\PY{p}{)}
+             \PY{n+nd}{@property}
+             \PY{k}{def} \PY{n+nf}{num\PYZus{}samples}\PY{p}{(}\PY{n+nb+bp}{self}\PY{p}{)}\PY{p}{:}
+                 \PY{k}{return} \PY{n+nb}{len}\PY{p}{(}\PY{n+nb+bp}{self}\PY{o}{.}\PY{n}{\PYZus{}samples}\PY{p}{)}
+         
+         
+         
+         \PY{n}{cardinality\PYZus{}betas} \PY{o}{=} \PY{n+nb}{len}\PY{p}{(}\PY{n}{basic}\PY{o}{.}\PY{n}{actions}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{)}
+         
+         \PY{k}{class} \PY{n+nc}{QN\PYZus{}l1}\PY{p}{(}\PY{n}{tf}\PY{o}{.}\PY{n}{keras}\PY{o}{.}\PY{n}{Model}\PY{p}{)}\PY{p}{:}
+             \PY{k}{def} \PY{n+nf}{\PYZus{}\PYZus{}init\PYZus{}\PYZus{}}\PY{p}{(}\PY{n+nb+bp}{self}\PY{p}{)}\PY{p}{:}
+                 \PY{n+nb}{super}\PY{p}{(}\PY{n}{QN\PYZus{}l1}\PY{p}{,}\PY{n+nb+bp}{self}\PY{p}{)}\PY{o}{.}\PY{n+nf+fm}{\PYZus{}\PYZus{}init\PYZus{}\PYZus{}}\PY{p}{(}\PY{p}{)}
+                 \PY{n+nb+bp}{self}\PY{o}{.}\PY{n}{l1} \PY{o}{=} \PY{n}{Dense}\PY{p}{(}\PY{l+m+mi}{30}\PY{p}{,} \PY{n}{input\PYZus{}shape}\PY{o}{=}\PY{p}{(}\PY{l+m+mi}{0}\PY{p}{,}\PY{p}{)}\PY{p}{,} \PY{n}{kernel\PYZus{}initializer}\PY{o}{=}\PY{n}{tf}\PY{o}{.}\PY{n}{keras}\PY{o}{.}\PY{n}{initializers}\PY{o}{.}\PY{n}{RandomNormal}\PY{p}{(}\PY{n}{mean}\PY{o}{=}\PY{l+m+mf}{0.0}\PY{p}{,} \PY{n}{stddev}\PY{o}{=}\PY{l+m+mf}{1.0}\PY{p}{,} \PY{n}{seed}\PY{o}{=}\PY{k+kc}{None}\PY{p}{)}\PY{p}{,}
+                         \PY{n}{bias\PYZus{}initializer}\PY{o}{=}\PY{n}{tf}\PY{o}{.}\PY{n}{keras}\PY{o}{.}\PY{n}{initializers}\PY{o}{.}\PY{n}{RandomNormal}\PY{p}{(}\PY{n}{mean}\PY{o}{=}\PY{l+m+mf}{0.0}\PY{p}{,} \PY{n}{stddev}\PY{o}{=}\PY{l+m+mf}{1.0}\PY{p}{,} \PY{n}{seed}\PY{o}{=}\PY{k+kc}{None}\PY{p}{)}\PY{p}{)}
+                 \PY{n+nb+bp}{self}\PY{o}{.}\PY{n}{l2} \PY{o}{=} \PY{n}{Dense}\PY{p}{(}\PY{l+m+mi}{35}\PY{p}{,} \PY{n}{kernel\PYZus{}initializer}\PY{o}{=}\PY{n}{tf}\PY{o}{.}\PY{n}{keras}\PY{o}{.}\PY{n}{initializers}\PY{o}{.}\PY{n}{RandomNormal}\PY{p}{(}\PY{n}{mean}\PY{o}{=}\PY{l+m+mf}{0.0}\PY{p}{,} \PY{n}{stddev}\PY{o}{=}\PY{l+m+mf}{1.0}\PY{p}{,} \PY{n}{seed}\PY{o}{=}\PY{k+kc}{None}\PY{p}{)}\PY{p}{,}
+                         \PY{n}{bias\PYZus{}initializer}\PY{o}{=}\PY{n}{tf}\PY{o}{.}\PY{n}{keras}\PY{o}{.}\PY{n}{initializers}\PY{o}{.}\PY{n}{RandomNormal}\PY{p}{(}\PY{n}{mean}\PY{o}{=}\PY{l+m+mf}{0.0}\PY{p}{,} \PY{n}{stddev}\PY{o}{=}\PY{l+m+mf}{1.0}\PY{p}{,} \PY{n}{seed}\PY{o}{=}\PY{k+kc}{None}\PY{p}{)}\PY{p}{)}
+         
+                 \PY{c+c1}{\PYZsh{} self.l21 = Dense(90, kernel\PYZus{}initializer=\PYZsq{}random\PYZus{}uniform\PYZsq{},}
+                 \PY{c+c1}{\PYZsh{}         bias\PYZus{}initializer=\PYZsq{}random\PYZus{}uniform\PYZsq{})}
+                 \PY{n+nb+bp}{self}\PY{o}{.}\PY{n}{l3} \PY{o}{=} \PY{n}{Dense}\PY{p}{(}\PY{n}{cardinality\PYZus{}betas}\PY{p}{,} \PY{n}{kernel\PYZus{}initializer}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{random\PYZus{}uniform}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+                         \PY{n}{bias\PYZus{}initializer}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{random\PYZus{}uniform}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+         
+             \PY{k}{def} \PY{n+nf}{call}\PY{p}{(}\PY{n+nb+bp}{self}\PY{p}{,} \PY{n+nb}{input}\PY{p}{)}\PY{p}{:}
+                 \PY{n}{feat} \PY{o}{=} \PY{n}{tf}\PY{o}{.}\PY{n}{nn}\PY{o}{.}\PY{n}{relu}\PY{p}{(}\PY{n+nb+bp}{self}\PY{o}{.}\PY{n}{l1}\PY{p}{(}\PY{n+nb}{input}\PY{p}{)}\PY{p}{)}
+                 \PY{n}{feat} \PY{o}{=} \PY{n}{tf}\PY{o}{.}\PY{n}{nn}\PY{o}{.}\PY{n}{relu}\PY{p}{(}\PY{n+nb+bp}{self}\PY{o}{.}\PY{n}{l2}\PY{p}{(}\PY{n}{feat}\PY{p}{)}\PY{p}{)}
+                 \PY{c+c1}{\PYZsh{} feat = tf.nn.relu(self.l21(feat))}
+                 \PY{n}{value} \PY{o}{=} \PY{n+nb+bp}{self}\PY{o}{.}\PY{n}{l3}\PY{p}{(}\PY{n}{feat}\PY{p}{)}
+                 \PY{k}{return} \PY{n}{value}
+         
+         
+         
+         \PY{k}{class} \PY{n+nc}{QN\PYZus{}l2}\PY{p}{(}\PY{n}{tf}\PY{o}{.}\PY{n}{keras}\PY{o}{.}\PY{n}{Model}\PY{p}{)}\PY{p}{:}
+             \PY{k}{def} \PY{n+nf}{\PYZus{}\PYZus{}init\PYZus{}\PYZus{}}\PY{p}{(}\PY{n+nb+bp}{self}\PY{p}{)}\PY{p}{:}
+                 \PY{n+nb}{super}\PY{p}{(}\PY{n}{QN\PYZus{}l2}\PY{p}{,}\PY{n+nb+bp}{self}\PY{p}{)}\PY{o}{.}\PY{n+nf+fm}{\PYZus{}\PYZus{}init\PYZus{}\PYZus{}}\PY{p}{(}\PY{p}{)}
+                 \PY{n+nb+bp}{self}\PY{o}{.}\PY{n}{l1} \PY{o}{=} \PY{n}{Dense}\PY{p}{(}\PY{l+m+mi}{30}\PY{p}{,} \PY{n}{input\PYZus{}shape}\PY{o}{=}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{2}\PY{p}{)}\PY{p}{,} \PY{n}{kernel\PYZus{}initializer}\PY{o}{=}\PY{n}{tf}\PY{o}{.}\PY{n}{keras}\PY{o}{.}\PY{n}{initializers}\PY{o}{.}\PY{n}{RandomNormal}\PY{p}{(}\PY{n}{mean}\PY{o}{=}\PY{l+m+mf}{0.0}\PY{p}{,} \PY{n}{stddev}\PY{o}{=}\PY{l+m+mf}{1.0}\PY{p}{,} \PY{n}{seed}\PY{o}{=}\PY{k+kc}{None}\PY{p}{)}\PY{p}{,}
+                         \PY{n}{bias\PYZus{}initializer}\PY{o}{=}\PY{n}{tf}\PY{o}{.}\PY{n}{keras}\PY{o}{.}\PY{n}{initializers}\PY{o}{.}\PY{n}{RandomNormal}\PY{p}{(}\PY{n}{mean}\PY{o}{=}\PY{l+m+mf}{0.0}\PY{p}{,} \PY{n}{stddev}\PY{o}{=}\PY{l+m+mf}{1.0}\PY{p}{,} \PY{n}{seed}\PY{o}{=}\PY{k+kc}{None}\PY{p}{)}\PY{p}{)}
+                 \PY{n+nb+bp}{self}\PY{o}{.}\PY{n}{l2} \PY{o}{=} \PY{n}{Dense}\PY{p}{(}\PY{l+m+mi}{35}\PY{p}{,} \PY{n}{kernel\PYZus{}initializer}\PY{o}{=}\PY{n}{tf}\PY{o}{.}\PY{n}{keras}\PY{o}{.}\PY{n}{initializers}\PY{o}{.}\PY{n}{RandomNormal}\PY{p}{(}\PY{n}{mean}\PY{o}{=}\PY{l+m+mf}{0.0}\PY{p}{,} \PY{n}{stddev}\PY{o}{=}\PY{l+m+mf}{1.0}\PY{p}{,} \PY{n}{seed}\PY{o}{=}\PY{k+kc}{None}\PY{p}{)}\PY{p}{,}
+                         \PY{n}{bias\PYZus{}initializer}\PY{o}{=}\PY{n}{tf}\PY{o}{.}\PY{n}{keras}\PY{o}{.}\PY{n}{initializers}\PY{o}{.}\PY{n}{RandomNormal}\PY{p}{(}\PY{n}{mean}\PY{o}{=}\PY{l+m+mf}{0.0}\PY{p}{,} \PY{n}{stddev}\PY{o}{=}\PY{l+m+mf}{1.0}\PY{p}{,} \PY{n}{seed}\PY{o}{=}\PY{k+kc}{None}\PY{p}{)}\PY{p}{)}
+         
+                 \PY{c+c1}{\PYZsh{} self.l21 = Dense(90, kernel\PYZus{}initializer=\PYZsq{}random\PYZus{}uniform\PYZsq{},}
+                 \PY{c+c1}{\PYZsh{}         bias\PYZus{}initializer=\PYZsq{}random\PYZus{}uniform\PYZsq{})}
+                 \PY{n+nb+bp}{self}\PY{o}{.}\PY{n}{l3} \PY{o}{=} \PY{n}{Dense}\PY{p}{(}\PY{n}{cardinality\PYZus{}betas}\PY{p}{,} \PY{n}{kernel\PYZus{}initializer}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{random\PYZus{}uniform}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+                         \PY{n}{bias\PYZus{}initializer}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{random\PYZus{}uniform}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+         
+             \PY{k}{def} \PY{n+nf}{call}\PY{p}{(}\PY{n+nb+bp}{self}\PY{p}{,} \PY{n+nb}{input}\PY{p}{)}\PY{p}{:}
+                 \PY{n}{feat} \PY{o}{=} \PY{n}{tf}\PY{o}{.}\PY{n}{nn}\PY{o}{.}\PY{n}{relu}\PY{p}{(}\PY{n+nb+bp}{self}\PY{o}{.}\PY{n}{l1}\PY{p}{(}\PY{n+nb}{input}\PY{p}{)}\PY{p}{)}
+                 \PY{n}{feat} \PY{o}{=} \PY{n}{tf}\PY{o}{.}\PY{n}{nn}\PY{o}{.}\PY{n}{relu}\PY{p}{(}\PY{n+nb+bp}{self}\PY{o}{.}\PY{n}{l2}\PY{p}{(}\PY{n}{feat}\PY{p}{)}\PY{p}{)}
+                 \PY{c+c1}{\PYZsh{} feat = tf.nn.relu(self.l21(feat))}
+                 \PY{n}{value} \PY{o}{=} \PY{n+nb+bp}{self}\PY{o}{.}\PY{n}{l3}\PY{p}{(}\PY{n}{feat}\PY{p}{)}
+                 \PY{k}{return} \PY{n}{value}
+         
+         \PY{k}{class} \PY{n+nc}{QN\PYZus{}guess}\PY{p}{(}\PY{n}{tf}\PY{o}{.}\PY{n}{keras}\PY{o}{.}\PY{n}{Model}\PY{p}{)}\PY{p}{:}
+             \PY{k}{def} \PY{n+nf}{\PYZus{}\PYZus{}init\PYZus{}\PYZus{}}\PY{p}{(}\PY{n+nb+bp}{self}\PY{p}{)}\PY{p}{:}
+                 \PY{n+nb}{super}\PY{p}{(}\PY{n}{QN\PYZus{}guess}\PY{p}{,}\PY{n+nb+bp}{self}\PY{p}{)}\PY{o}{.}\PY{n+nf+fm}{\PYZus{}\PYZus{}init\PYZus{}\PYZus{}}\PY{p}{(}\PY{p}{)}
+                 \PY{n+nb+bp}{self}\PY{o}{.}\PY{n}{l1} \PY{o}{=} \PY{n}{Dense}\PY{p}{(}\PY{l+m+mi}{30}\PY{p}{,} \PY{n}{input\PYZus{}shape}\PY{o}{=}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{4}\PY{p}{)}\PY{p}{,} \PY{n}{kernel\PYZus{}initializer}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{random\PYZus{}uniform}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+                         \PY{n}{bias\PYZus{}initializer}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{random\PYZus{}uniform}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+                 \PY{n+nb+bp}{self}\PY{o}{.}\PY{n}{l2} \PY{o}{=} \PY{n}{Dense}\PY{p}{(}\PY{l+m+mi}{35}\PY{p}{,} \PY{n}{kernel\PYZus{}initializer}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{random\PYZus{}uniform}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+                         \PY{n}{bias\PYZus{}initializer}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{random\PYZus{}uniform}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+         
+                 \PY{c+c1}{\PYZsh{} self.l21 = Dense(90, kernel\PYZus{}initializer=\PYZsq{}random\PYZus{}uniform\PYZsq{},}
+                 \PY{c+c1}{\PYZsh{}         bias\PYZus{}initializer=\PYZsq{}random\PYZus{}uniform\PYZsq{})}
+                 \PY{n+nb+bp}{self}\PY{o}{.}\PY{n}{l3} \PY{o}{=} \PY{n}{Dense}\PY{p}{(}\PY{l+m+mi}{2}\PY{p}{,} \PY{n}{kernel\PYZus{}initializer}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{random\PYZus{}uniform}\PY{l+s+s1}{\PYZsq{}}\PY{p}{,}
+                         \PY{n}{bias\PYZus{}initializer}\PY{o}{=}\PY{l+s+s1}{\PYZsq{}}\PY{l+s+s1}{random\PYZus{}uniform}\PY{l+s+s1}{\PYZsq{}}\PY{p}{)}
+         
+             \PY{k}{def} \PY{n+nf}{call}\PY{p}{(}\PY{n+nb+bp}{self}\PY{p}{,} \PY{n+nb}{input}\PY{p}{)}\PY{p}{:}
+                 \PY{n}{feat} \PY{o}{=} \PY{n}{tf}\PY{o}{.}\PY{n}{nn}\PY{o}{.}\PY{n}{relu}\PY{p}{(}\PY{n+nb+bp}{self}\PY{o}{.}\PY{n}{l1}\PY{p}{(}\PY{n+nb}{input}\PY{p}{)}\PY{p}{)}
+                 \PY{n}{feat} \PY{o}{=} \PY{n}{tf}\PY{o}{.}\PY{n}{nn}\PY{o}{.}\PY{n}{relu}\PY{p}{(}\PY{n+nb+bp}{self}\PY{o}{.}\PY{n}{l2}\PY{p}{(}\PY{n}{feat}\PY{p}{)}\PY{p}{)}
+                 \PY{c+c1}{\PYZsh{} feat = tf.nn.relu(self.l21(feat))}
+                 \PY{n}{value} \PY{o}{=} \PY{n+nb+bp}{self}\PY{o}{.}\PY{n}{l3}\PY{p}{(}\PY{n}{feat}\PY{p}{)}
+                 \PY{k}{return} \PY{n}{value}
+         
+         
+         \PY{c+c1}{\PYZsh{}\PYZsh{}\PYZsh{}\PYZsh{} define the networks \PYZsh{}\PYZsh{}\PYZsh{}\PYZsh{}\PYZsh{}}
+         
+         \PY{n}{qn\PYZus{}l1\PYZus{}prim} \PY{o}{=} \PY{n}{QN\PYZus{}l1}\PY{p}{(}\PY{p}{)}
+         \PY{n}{qn\PYZus{}l1\PYZus{}targ} \PY{o}{=} \PY{n}{QN\PYZus{}l1}\PY{p}{(}\PY{p}{)}
+         
+         \PY{n}{qn\PYZus{}l2\PYZus{}prim} \PY{o}{=} \PY{n}{QN\PYZus{}l2}\PY{p}{(}\PY{p}{)}
+         \PY{n}{qn\PYZus{}l2\PYZus{}targ} \PY{o}{=} \PY{n}{QN\PYZus{}l2}\PY{p}{(}\PY{p}{)}
+         
+         \PY{n}{qn\PYZus{}guess\PYZus{}prim} \PY{o}{=} \PY{n}{QN\PYZus{}guess}\PY{p}{(}\PY{p}{)}
+         \PY{n}{qn\PYZus{}guess\PYZus{}targ} \PY{o}{=} \PY{n}{QN\PYZus{}guess}\PY{p}{(}\PY{p}{)}
+         
+         
+         
+         \PY{k}{def} \PY{n+nf}{give\PYZus{}first\PYZus{}beta}\PY{p}{(}\PY{n}{epsilon}\PY{p}{)}\PY{p}{:}
+             \PY{k}{if} \PY{n}{np}\PY{o}{.}\PY{n}{random}\PY{o}{.}\PY{n}{random}\PY{p}{(}\PY{p}{)} \PY{o}{\PYZlt{}} \PY{n}{epsilon}\PY{p}{:}
+                 \PY{n}{label} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{random}\PY{o}{.}\PY{n}{choice}\PY{p}{(}\PY{n}{np}\PY{o}{.}\PY{n}{arange}\PY{p}{(}\PY{n+nb}{len}\PY{p}{(}\PY{n}{basic}\PY{o}{.}\PY{n}{actions}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{)}\PY{p}{)}\PY{p}{)}
+                 \PY{k}{return} \PY{n}{label}\PY{p}{,} \PY{n}{basic}\PY{o}{.}\PY{n}{actions}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{[}\PY{n}{label}\PY{p}{]}
+             \PY{k}{else}\PY{p}{:}
+                 \PY{n+nb}{input} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{expand\PYZus{}dims}\PY{p}{(}\PY{n}{np}\PY{o}{.}\PY{n}{array}\PY{p}{(}\PY{p}{[}\PY{p}{]}\PY{p}{)}\PY{p}{,} \PY{n}{axis}\PY{o}{=}\PY{l+m+mi}{0}\PY{p}{)}
+                 \PY{n}{q1s} \PY{o}{=} \PY{n}{qn\PYZus{}l1\PYZus{}prim}\PY{p}{(}\PY{n+nb}{input}\PY{p}{)}
+                 \PY{n}{q1s} \PY{o}{=} \PY{n}{q1s}\PY{o}{.}\PY{n}{numpy}\PY{p}{(}\PY{p}{)}
+                 \PY{n}{label} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{argmax}\PY{p}{(}\PY{n}{q1s}\PY{p}{)}
+                 \PY{n}{beta1} \PY{o}{=} \PY{n}{basic}\PY{o}{.}\PY{n}{actions}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{[}\PY{n}{label}\PY{p}{]}
+                 \PY{k}{return} \PY{n}{label}\PY{p}{,} \PY{n}{beta1}
+         
+         \PY{k}{def} \PY{n+nf}{give\PYZus{}second\PYZus{}beta}\PY{p}{(}\PY{n}{new\PYZus{}state}\PY{p}{,} \PY{n}{epsilon}\PY{p}{)}\PY{p}{:}
+             \PY{k}{if} \PY{n}{np}\PY{o}{.}\PY{n}{random}\PY{o}{.}\PY{n}{random}\PY{p}{(}\PY{p}{)} \PY{o}{\PYZlt{}} \PY{n}{epsilon}\PY{p}{:}
+                 \PY{n}{label} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{random}\PY{o}{.}\PY{n}{choice}\PY{p}{(}\PY{n}{np}\PY{o}{.}\PY{n}{arange}\PY{p}{(}\PY{n+nb}{len}\PY{p}{(}\PY{n}{basic}\PY{o}{.}\PY{n}{actions}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{)}\PY{p}{)}\PY{p}{)}
+                 \PY{k}{return} \PY{n}{label}\PY{p}{,} \PY{n}{basic}\PY{o}{.}\PY{n}{actions}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{[}\PY{n}{label}\PY{p}{]}
+             \PY{k}{else}\PY{p}{:}
+                 \PY{n+nb}{input} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{expand\PYZus{}dims}\PY{p}{(}\PY{n}{np}\PY{o}{.}\PY{n}{array}\PY{p}{(}\PY{n}{new\PYZus{}state}\PY{p}{)}\PY{p}{,} \PY{n}{axis}\PY{o}{=}\PY{l+m+mi}{0}\PY{p}{)}
+                 \PY{n}{q2s} \PY{o}{=} \PY{n}{qn\PYZus{}l2\PYZus{}prim}\PY{p}{(}\PY{n+nb}{input}\PY{p}{)}
+                 \PY{n}{q2s} \PY{o}{=} \PY{n}{q2s}\PY{o}{.}\PY{n}{numpy}\PY{p}{(}\PY{p}{)}
+                 \PY{n}{label} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{argmax}\PY{p}{(}\PY{n}{q2s}\PY{p}{)}
+                 \PY{n}{beta2} \PY{o}{=} \PY{n}{basic}\PY{o}{.}\PY{n}{actions}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{[}\PY{n}{label}\PY{p}{]}
+                 \PY{k}{return} \PY{n}{label}\PY{p}{,} \PY{n}{beta2}
+         
+         
+         \PY{k}{def} \PY{n+nf}{give\PYZus{}guess}\PY{p}{(}\PY{n}{new\PYZus{}state}\PY{p}{,} \PY{n}{epsilon}\PY{p}{)}\PY{p}{:}
+             \PY{k}{if} \PY{n}{np}\PY{o}{.}\PY{n}{random}\PY{o}{.}\PY{n}{random}\PY{p}{(}\PY{p}{)} \PY{o}{\PYZlt{}} \PY{n}{epsilon}\PY{p}{:}
+                 \PY{n}{guess} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{random}\PY{o}{.}\PY{n}{choice}\PY{p}{(}\PY{n}{basic}\PY{o}{.}\PY{n}{possible\PYZus{}phases}\PY{p}{,}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}
+                 \PY{k}{return} \PY{n+nb}{int}\PY{p}{(}\PY{p}{(}\PY{n}{guess}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{)}\PY{o}{/}\PY{l+m+mi}{2}\PY{p}{)}\PY{p}{,} \PY{n}{guess}
+             \PY{k}{else}\PY{p}{:}
+                 \PY{n+nb}{input} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{expand\PYZus{}dims}\PY{p}{(}\PY{n}{np}\PY{o}{.}\PY{n}{array}\PY{p}{(}\PY{n}{new\PYZus{}state}\PY{p}{)}\PY{p}{,} \PY{n}{axis}\PY{o}{=}\PY{l+m+mi}{0}\PY{p}{)}
+                 \PY{n}{qguess} \PY{o}{=} \PY{n}{qn\PYZus{}guess\PYZus{}prim}\PY{p}{(}\PY{n+nb}{input}\PY{p}{)}
+                 \PY{n}{guess} \PY{o}{=} \PY{n}{qguess}\PY{o}{.}\PY{n}{numpy}\PY{p}{(}\PY{p}{)}
+                 \PY{n}{label} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{argmax}\PY{p}{(}\PY{n}{guess}\PY{p}{)}
+                 \PY{n}{guess} \PY{o}{=} \PY{n}{basic}\PY{o}{.}\PY{n}{possible\PYZus{}phases}\PY{p}{[}\PY{n}{label}\PY{p}{]}
+                 \PY{k}{return} \PY{n+nb}{int}\PY{p}{(}\PY{p}{(}\PY{n}{guess}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{)}\PY{o}{/}\PY{l+m+mi}{2}\PY{p}{)}\PY{p}{,} \PY{n}{guess}
+             
+             
+             
+             
+         \PY{k}{def} \PY{n+nf}{learn}\PY{p}{(}\PY{p}{)}\PY{p}{:}
+             \PY{n}{batch\PYZus{}length}\PY{o}{=}\PY{l+m+mi}{32}
+             \PY{n}{batch} \PY{o}{=} \PY{n}{buffer}\PY{o}{.}\PY{n}{sample}\PY{p}{(}\PY{n}{batch\PYZus{}length}\PY{p}{)}
+         
+             \PY{n}{s\PYZus{}2\PYZus{}batch} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{array}\PY{p}{(}\PY{p}{[}\PY{p}{[} \PY{n}{v}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,} \PY{n}{v}\PY{p}{[}\PY{l+m+mi}{2}\PY{p}{]}\PY{p}{]} \PY{k}{for} \PY{n}{v} \PY{o+ow}{in} \PY{n}{batch} \PY{p}{]} \PY{p}{)}
+             \PY{n}{labels\PYZus{}beta1} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{array}\PY{p}{(}\PY{p}{[}\PY{n}{v}\PY{p}{[}\PY{l+m+mi}{4}\PY{p}{]} \PY{k}{for} \PY{n}{v} \PY{o+ow}{in} \PY{n}{batch}\PY{p}{]}\PY{p}{)}
+         
+             \PY{n}{q\PYZus{}2\PYZus{}prim} \PY{o}{=} \PY{n}{qn\PYZus{}l2\PYZus{}prim}\PY{p}{(}\PY{n}{np}\PY{o}{.}\PY{n}{expand\PYZus{}dims}\PY{p}{(}\PY{n}{s\PYZus{}2\PYZus{}batch}\PY{p}{,} \PY{n}{axis}\PY{o}{=}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{)}
+             \PY{n}{q\PYZus{}2\PYZus{}prim} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{squeeze}\PY{p}{(}\PY{n}{q\PYZus{}2\PYZus{}prim}\PY{o}{.}\PY{n}{numpy}\PY{p}{(}\PY{p}{)}\PY{p}{)}
+         
+             \PY{n}{opt\PYZus{}a\PYZus{}2\PYZus{}prim} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{argmax}\PY{p}{(}\PY{n}{q\PYZus{}2\PYZus{}prim}\PY{p}{,}\PY{n}{axis}\PY{o}{=}\PY{l+m+mi}{1}\PY{p}{)}
+         
+             \PY{n}{update\PYZus{}for\PYZus{}q\PYZus{}1\PYZus{}prim} \PY{o}{=} \PY{n}{qn\PYZus{}l1\PYZus{}targ}\PY{p}{(}\PY{n}{np}\PY{o}{.}\PY{n}{expand\PYZus{}dims}\PY{p}{(}\PY{n}{np}\PY{o}{.}\PY{n}{array}\PY{p}{(}\PY{p}{[}\PY{p}{[}\PY{p}{]} \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n+nb}{len}\PY{p}{(}\PY{n}{batch}\PY{p}{)}\PY{p}{)}\PY{p}{]}\PY{p}{)}\PY{p}{,} \PY{n}{axis}\PY{o}{=}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{)} \PY{c+c1}{\PYZsh{}targ = target}
+             \PY{n}{update\PYZus{}for\PYZus{}q\PYZus{}1\PYZus{}prim} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{squeeze}\PY{p}{(}\PY{n}{update\PYZus{}for\PYZus{}q\PYZus{}1\PYZus{}prim}\PY{p}{,} \PY{n}{axis}\PY{o}{=}\PY{l+m+mi}{0}\PY{p}{)}
+             \PY{n}{qlabels\PYZus{}l1} \PY{o}{=} \PY{n}{update\PYZus{}for\PYZus{}q\PYZus{}1\PYZus{}prim}\PY{o}{.}\PY{n}{copy}\PY{p}{(}\PY{p}{)}
+             \PY{n}{qlabels\PYZus{}l1}\PY{p}{[}\PY{n}{np}\PY{o}{.}\PY{n}{arange}\PY{p}{(}\PY{n}{batch\PYZus{}length}\PY{p}{)}\PY{p}{,} \PY{n}{labels\PYZus{}beta1}\PY{p}{]} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{squeeze}\PY{p}{(}\PY{n}{qn\PYZus{}l2\PYZus{}targ}\PY{p}{(}\PY{n}{np}\PY{o}{.}\PY{n}{expand\PYZus{}dims}\PY{p}{(}\PY{n}{s\PYZus{}2\PYZus{}batch}\PY{p}{,} \PY{n}{axis}\PY{o}{=}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{)}\PY{o}{.}\PY{n}{numpy}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{p}{[}\PY{n}{np}\PY{o}{.}\PY{n}{arange}\PY{p}{(}\PY{n}{batch\PYZus{}length}\PY{p}{)}\PY{p}{,}\PY{n}{opt\PYZus{}a\PYZus{}2\PYZus{}prim}\PY{p}{]}
+         
+         
+         
+             \PY{k}{with} \PY{n}{tf}\PY{o}{.}\PY{n}{device}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{/cpu:0}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}\PY{p}{:}
+                 \PY{k}{with} \PY{n}{tf}\PY{o}{.}\PY{n}{GradientTape}\PY{p}{(}\PY{p}{)} \PY{k}{as} \PY{n}{tape}\PY{p}{:}
+                     \PY{n}{tape}\PY{o}{.}\PY{n}{watch}\PY{p}{(}\PY{n}{qn\PYZus{}l1\PYZus{}prim}\PY{o}{.}\PY{n}{trainable\PYZus{}variables}\PY{p}{)}
+                     \PY{n}{pred\PYZus{}q\PYZus{}1s} \PY{o}{=} \PY{n}{qn\PYZus{}l1\PYZus{}prim}\PY{p}{(}\PY{n}{np}\PY{o}{.}\PY{n}{expand\PYZus{}dims}\PY{p}{(}\PY{n}{np}\PY{o}{.}\PY{n}{array}\PY{p}{(}\PY{p}{[}\PY{p}{[}\PY{p}{]} \PY{k}{for} \PY{n}{i} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n+nb}{len}\PY{p}{(}\PY{n}{batch}\PY{p}{)}\PY{p}{)}\PY{p}{]}\PY{p}{)}\PY{p}{,} \PY{n}{axis}\PY{o}{=}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{)}
+         
+                     \PY{n}{loss\PYZus{}sum} \PY{o}{=}\PY{n}{tf}\PY{o}{.}\PY{n}{keras}\PY{o}{.}\PY{n}{losses}\PY{o}{.}\PY{n}{MSE}\PY{p}{(}\PY{n}{pred\PYZus{}q\PYZus{}1s}\PY{p}{,} \PY{n}{qlabels\PYZus{}l1}\PY{p}{)}
+                     \PY{n}{loss} \PY{o}{=} \PY{n}{tf}\PY{o}{.}\PY{n}{reduce\PYZus{}mean}\PY{p}{(}\PY{n}{loss\PYZus{}sum}\PY{p}{)}
+         
+                     \PY{n}{grads} \PY{o}{=} \PY{n}{tape}\PY{o}{.}\PY{n}{gradient}\PY{p}{(}\PY{n}{loss}\PY{p}{,} \PY{n}{qn\PYZus{}l1\PYZus{}prim}\PY{o}{.}\PY{n}{trainable\PYZus{}variables}\PY{p}{)}
+         
+                     \PY{n}{optimizer\PYZus{}ql1}\PY{o}{.}\PY{n}{apply\PYZus{}gradients}\PY{p}{(}\PY{n+nb}{zip}\PY{p}{(}\PY{n}{grads}\PY{p}{,} \PY{n}{qn\PYZus{}l1\PYZus{}prim}\PY{o}{.}\PY{n}{trainable\PYZus{}variables}\PY{p}{)}\PY{p}{)}
+                     
+             \PY{n}{s\PYZus{}2\PYZus{}batch} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{array}\PY{p}{(}\PY{p}{[}\PY{p}{[}\PY{n}{v}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,} \PY{n}{v}\PY{p}{[}\PY{l+m+mi}{2}\PY{p}{]}\PY{p}{]} \PY{k}{for} \PY{n}{v} \PY{o+ow}{in} \PY{n}{batch}\PY{p}{]}\PY{p}{)}
+             \PY{n}{s\PYZus{}3\PYZus{}batch} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{array}\PY{p}{(}\PY{p}{[}\PY{p}{[}\PY{n}{v}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,} \PY{n}{v}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{,} \PY{n}{v}\PY{p}{[}\PY{l+m+mi}{2}\PY{p}{]}\PY{p}{,} \PY{n}{v}\PY{p}{[}\PY{l+m+mi}{3}\PY{p}{]}\PY{p}{]} \PY{k}{for} \PY{n}{v} \PY{o+ow}{in} \PY{n}{batch}\PY{p}{]}\PY{p}{)}
+         
+             \PY{c+c1}{\PYZsh{}labels\PYZus{}guess = np.array([v[7] for v in batch])}
+             \PY{n}{labels\PYZus{}action\PYZus{}2} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{array}\PY{p}{(}\PY{p}{[}\PY{n}{v}\PY{p}{[}\PY{l+m+mi}{5}\PY{p}{]} \PY{k}{for} \PY{n}{v} \PY{o+ow}{in} \PY{n}{batch}\PY{p}{]}\PY{p}{)}
+         
+             \PY{n}{q\PYZus{}3\PYZus{}prim} \PY{o}{=} \PY{n}{qn\PYZus{}guess\PYZus{}prim}\PY{p}{(}\PY{n}{np}\PY{o}{.}\PY{n}{expand\PYZus{}dims}\PY{p}{(}\PY{n}{s\PYZus{}3\PYZus{}batch}\PY{p}{,} \PY{n}{axis}\PY{o}{=}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{)}
+             \PY{n}{q\PYZus{}3\PYZus{}prim} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{squeeze}\PY{p}{(}\PY{n}{q\PYZus{}3\PYZus{}prim}\PY{o}{.}\PY{n}{numpy}\PY{p}{(}\PY{p}{)}\PY{p}{)}
+         
+             \PY{n}{opt\PYZus{}a\PYZus{}3\PYZus{}prim} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{argmax}\PY{p}{(}\PY{n}{q\PYZus{}3\PYZus{}prim}\PY{p}{,} \PY{n}{axis}\PY{o}{=}\PY{l+m+mi}{1}\PY{p}{)}
+         
+             \PY{n}{update\PYZus{}for\PYZus{}q\PYZus{}2\PYZus{}prim} \PY{o}{=} \PY{n}{qn\PYZus{}l2\PYZus{}targ}\PY{p}{(}\PY{n}{np}\PY{o}{.}\PY{n}{expand\PYZus{}dims}\PY{p}{(}\PY{n}{s\PYZus{}2\PYZus{}batch}\PY{p}{,} \PY{n}{axis}\PY{o}{=}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{)}
+             \PY{n}{update\PYZus{}for\PYZus{}q\PYZus{}2\PYZus{}prim} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{squeeze}\PY{p}{(}\PY{n}{update\PYZus{}for\PYZus{}q\PYZus{}2\PYZus{}prim}\PY{p}{,} \PY{n}{axis}\PY{o}{=}\PY{l+m+mi}{0}\PY{p}{)}
+             \PY{n}{qlabels\PYZus{}l2} \PY{o}{=} \PY{n}{update\PYZus{}for\PYZus{}q\PYZus{}2\PYZus{}prim}\PY{o}{.}\PY{n}{copy}\PY{p}{(}\PY{p}{)}
+             \PY{n}{qlabels\PYZus{}l2}\PY{p}{[}\PY{n}{np}\PY{o}{.}\PY{n}{arange}\PY{p}{(}\PY{n}{batch\PYZus{}length}\PY{p}{)}\PY{p}{,} \PY{n}{labels\PYZus{}action\PYZus{}2}\PY{p}{]} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{squeeze}\PY{p}{(}\PY{n}{qn\PYZus{}guess\PYZus{}targ}\PY{p}{(}\PY{n}{np}\PY{o}{.}\PY{n}{expand\PYZus{}dims}\PY{p}{(}\PY{n}{s\PYZus{}3\PYZus{}batch}\PY{p}{,} \PY{n}{axis}\PY{o}{=}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{)}\PY{o}{.}\PY{n}{numpy}\PY{p}{(}\PY{p}{)}\PY{p}{)}\PY{p}{[}\PY{n}{np}\PY{o}{.}\PY{n}{arange}\PY{p}{(}\PY{n}{batch\PYZus{}length}\PY{p}{)}\PY{p}{,} \PY{n}{opt\PYZus{}a\PYZus{}3\PYZus{}prim}\PY{p}{]}
+         
+         
+             \PY{k}{with} \PY{n}{tf}\PY{o}{.}\PY{n}{device}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{/cpu:0}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}\PY{p}{:}
+                 \PY{k}{with} \PY{n}{tf}\PY{o}{.}\PY{n}{GradientTape}\PY{p}{(}\PY{p}{)} \PY{k}{as} \PY{n}{tape}\PY{p}{:}
+                     \PY{n}{tape}\PY{o}{.}\PY{n}{watch}\PY{p}{(}\PY{n}{qn\PYZus{}l2\PYZus{}prim}\PY{o}{.}\PY{n}{trainable\PYZus{}variables}\PY{p}{)}
+                     \PY{n}{pred\PYZus{}q\PYZus{}2s} \PY{o}{=} \PY{n}{qn\PYZus{}l2\PYZus{}prim}\PY{p}{(}\PY{n}{np}\PY{o}{.}\PY{n}{expand\PYZus{}dims}\PY{p}{(}\PY{n}{s\PYZus{}2\PYZus{}batch}\PY{p}{,} \PY{n}{axis}\PY{o}{=}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{)}
+                     \PY{n}{loss\PYZus{}sum} \PY{o}{=}\PY{n}{tf}\PY{o}{.}\PY{n}{keras}\PY{o}{.}\PY{n}{losses}\PY{o}{.}\PY{n}{MSE}\PY{p}{(}\PY{n}{pred\PYZus{}q\PYZus{}2s}\PY{p}{,} \PY{n}{qlabels\PYZus{}l2}\PY{p}{)}
+                     \PY{n}{loss} \PY{o}{=} \PY{n}{tf}\PY{o}{.}\PY{n}{reduce\PYZus{}mean}\PY{p}{(}\PY{n}{loss\PYZus{}sum}\PY{p}{)}
+         
+                     \PY{n}{grads} \PY{o}{=} \PY{n}{tape}\PY{o}{.}\PY{n}{gradient}\PY{p}{(}\PY{n}{loss}\PY{p}{,} \PY{n}{qn\PYZus{}l2\PYZus{}prim}\PY{o}{.}\PY{n}{trainable\PYZus{}variables}\PY{p}{)}
+                     \PY{n}{optimizer\PYZus{}ql2}\PY{o}{.}\PY{n}{apply\PYZus{}gradients}\PY{p}{(}\PY{n+nb}{zip}\PY{p}{(}\PY{n}{grads}\PY{p}{,} \PY{n}{qn\PYZus{}l2\PYZus{}prim}\PY{o}{.}\PY{n}{trainable\PYZus{}variables}\PY{p}{)}\PY{p}{)}
+         
+         
+             \PY{n}{s\PYZus{}3\PYZus{}batch} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{array}\PY{p}{(}\PY{p}{[}\PY{p}{[}\PY{n}{v}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{,} \PY{n}{v}\PY{p}{[}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{,} \PY{n}{v}\PY{p}{[}\PY{l+m+mi}{2}\PY{p}{]}\PY{p}{,} \PY{n}{v}\PY{p}{[}\PY{l+m+mi}{3}\PY{p}{]}\PY{p}{]} \PY{k}{for} \PY{n}{v} \PY{o+ow}{in} \PY{n}{batch}\PY{p}{]}\PY{p}{)}
+             \PY{n}{rewards} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{array}\PY{p}{(}\PY{p}{[}\PY{n}{v}\PY{p}{[}\PY{o}{\PYZhy{}}\PY{l+m+mi}{1}\PY{p}{]} \PY{k}{for} \PY{n}{v} \PY{o+ow}{in} \PY{n}{batch}\PY{p}{]}\PY{p}{)}
+             \PY{n}{labels\PYZus{}guess} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{array}\PY{p}{(}\PY{p}{[}\PY{n}{v}\PY{p}{[}\PY{l+m+mi}{7}\PY{p}{]} \PY{k}{for} \PY{n}{v} \PY{o+ow}{in} \PY{n}{batch}\PY{p}{]}\PY{p}{)}
+         
+             \PY{n}{update\PYZus{}for\PYZus{}q\PYZus{}3\PYZus{}prim} \PY{o}{=} \PY{n}{qn\PYZus{}guess\PYZus{}targ}\PY{p}{(}\PY{n}{np}\PY{o}{.}\PY{n}{expand\PYZus{}dims}\PY{p}{(}\PY{n}{s\PYZus{}3\PYZus{}batch}\PY{p}{,} \PY{n}{axis}\PY{o}{=}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{)}
+             \PY{n}{update\PYZus{}for\PYZus{}q\PYZus{}3\PYZus{}prim} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{squeeze}\PY{p}{(}\PY{n}{update\PYZus{}for\PYZus{}q\PYZus{}3\PYZus{}prim}\PY{p}{,} \PY{n}{axis}\PY{o}{=}\PY{l+m+mi}{0}\PY{p}{)}
+             \PY{n}{qlabels\PYZus{}l3} \PY{o}{=} \PY{n}{update\PYZus{}for\PYZus{}q\PYZus{}3\PYZus{}prim}\PY{o}{.}\PY{n}{copy}\PY{p}{(}\PY{p}{)}
+             \PY{n}{qlabels\PYZus{}l3}\PY{p}{[}\PY{n}{np}\PY{o}{.}\PY{n}{arange}\PY{p}{(}\PY{n}{batch\PYZus{}length}\PY{p}{)}\PY{p}{,} \PY{n}{labels\PYZus{}guess}\PY{p}{]} \PY{o}{=} \PY{n}{rewards}\PY{p}{[}\PY{n}{np}\PY{o}{.}\PY{n}{arange}\PY{p}{(}\PY{n}{batch\PYZus{}length}\PY{p}{)}\PY{p}{]}
+         
+         
+             \PY{k}{with} \PY{n}{tf}\PY{o}{.}\PY{n}{device}\PY{p}{(}\PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{/cpu:0}\PY{l+s+s2}{\PYZdq{}}\PY{p}{)}\PY{p}{:}
+                 \PY{k}{with} \PY{n}{tf}\PY{o}{.}\PY{n}{GradientTape}\PY{p}{(}\PY{p}{)} \PY{k}{as} \PY{n}{tape}\PY{p}{:}
+                     \PY{n}{tape}\PY{o}{.}\PY{n}{watch}\PY{p}{(}\PY{n}{qn\PYZus{}guess\PYZus{}prim}\PY{o}{.}\PY{n}{trainable\PYZus{}variables}\PY{p}{)}
+                     \PY{n}{pred\PYZus{}q\PYZus{}3s} \PY{o}{=} \PY{n}{qn\PYZus{}guess\PYZus{}prim}\PY{p}{(}\PY{n}{np}\PY{o}{.}\PY{n}{expand\PYZus{}dims}\PY{p}{(}\PY{n}{s\PYZus{}3\PYZus{}batch}\PY{p}{,} \PY{n}{axis}\PY{o}{=}\PY{l+m+mi}{0}\PY{p}{)}\PY{p}{)}
+                     \PY{n}{loss\PYZus{}sum} \PY{o}{=}\PY{n}{tf}\PY{o}{.}\PY{n}{keras}\PY{o}{.}\PY{n}{losses}\PY{o}{.}\PY{n}{MSE}\PY{p}{(}\PY{n}{pred\PYZus{}q\PYZus{}3s}\PY{p}{,} \PY{n}{qlabels\PYZus{}l3}\PY{p}{)}
+                     \PY{n}{loss} \PY{o}{=} \PY{n}{tf}\PY{o}{.}\PY{n}{reduce\PYZus{}mean}\PY{p}{(}\PY{n}{loss\PYZus{}sum}\PY{p}{)}
+         
+                     \PY{n}{grads} \PY{o}{=} \PY{n}{tape}\PY{o}{.}\PY{n}{gradient}\PY{p}{(}\PY{n}{loss}\PY{p}{,} \PY{n}{qn\PYZus{}guess\PYZus{}prim}\PY{o}{.}\PY{n}{trainable\PYZus{}variables}\PY{p}{)}
+                     \PY{n}{optimizer\PYZus{}ql3}\PY{o}{.}\PY{n}{apply\PYZus{}gradients}\PY{p}{(}\PY{n+nb}{zip}\PY{p}{(}\PY{n}{grads}\PY{p}{,} \PY{n}{qn\PYZus{}guess\PYZus{}prim}\PY{o}{.}\PY{n}{trainable\PYZus{}variables}\PY{p}{)}\PY{p}{)}
+                     
+             \PY{k}{for} \PY{n}{t}\PY{p}{,} \PY{n}{e} \PY{o+ow}{in} \PY{n+nb}{zip}\PY{p}{(}\PY{n}{qn\PYZus{}l1\PYZus{}targ}\PY{o}{.}\PY{n}{trainable\PYZus{}variables}\PY{p}{,} \PY{n}{qn\PYZus{}l1\PYZus{}prim}\PY{o}{.}\PY{n}{trainable\PYZus{}variables}\PY{p}{)}\PY{p}{:}
+                 \PY{n}{t}\PY{o}{.}\PY{n}{assign}\PY{p}{(}\PY{n}{t}\PY{o}{*}\PY{p}{(}\PY{l+m+mi}{1}\PY{o}{\PYZhy{}}\PY{n}{TAU}\PY{p}{)} \PY{o}{+} \PY{n}{e}\PY{o}{*}\PY{n}{TAU}\PY{p}{)}
+         
+             \PY{k}{for} \PY{n}{t}\PY{p}{,} \PY{n}{e} \PY{o+ow}{in} \PY{n+nb}{zip}\PY{p}{(}\PY{n}{qn\PYZus{}l2\PYZus{}targ}\PY{o}{.}\PY{n}{trainable\PYZus{}variables}\PY{p}{,} \PY{n}{qn\PYZus{}l2\PYZus{}prim}\PY{o}{.}\PY{n}{trainable\PYZus{}variables}\PY{p}{)}\PY{p}{:}
+                 \PY{n}{t}\PY{o}{.}\PY{n}{assign}\PY{p}{(}\PY{n}{t}\PY{o}{*}\PY{p}{(}\PY{l+m+mi}{1}\PY{o}{\PYZhy{}}\PY{n}{TAU}\PY{p}{)} \PY{o}{+} \PY{n}{e}\PY{o}{*}\PY{n}{TAU}\PY{p}{)}
+         
+             \PY{k}{for} \PY{n}{t}\PY{p}{,} \PY{n}{e} \PY{o+ow}{in} \PY{n+nb}{zip}\PY{p}{(}\PY{n}{qn\PYZus{}guess\PYZus{}targ}\PY{o}{.}\PY{n}{trainable\PYZus{}variables}\PY{p}{,} \PY{n}{qn\PYZus{}guess\PYZus{}prim}\PY{o}{.}\PY{n}{trainable\PYZus{}variables}\PY{p}{)}\PY{p}{:}
+                 \PY{n}{t}\PY{o}{.}\PY{n}{assign}\PY{p}{(}\PY{n}{t}\PY{o}{*}\PY{p}{(}\PY{l+m+mi}{1}\PY{o}{\PYZhy{}}\PY{n}{TAU}\PY{p}{)} \PY{o}{+} \PY{n}{e}\PY{o}{*}\PY{n}{TAU}\PY{p}{)}
+             \PY{k}{return}
+             
+         
+         
+         \PY{n}{buffer} \PY{o}{=} \PY{n}{Memory}\PY{p}{(}\PY{l+m+mi}{10}\PY{o}{*}\PY{o}{*}\PY{l+m+mi}{4}\PY{p}{)}
+         \PY{n}{optimizer\PYZus{}ql1} \PY{o}{=} \PY{n}{tf}\PY{o}{.}\PY{n}{keras}\PY{o}{.}\PY{n}{optimizers}\PY{o}{.}\PY{n}{Adam}\PY{p}{(}\PY{n}{lr}\PY{o}{=}\PY{l+m+mf}{0.001}\PY{p}{)}
+         \PY{n}{optimizer\PYZus{}ql2} \PY{o}{=} \PY{n}{tf}\PY{o}{.}\PY{n}{keras}\PY{o}{.}\PY{n}{optimizers}\PY{o}{.}\PY{n}{Adam}\PY{p}{(}\PY{n}{lr}\PY{o}{=}\PY{l+m+mf}{0.001}\PY{p}{)}
+         \PY{n}{optimizer\PYZus{}ql3} \PY{o}{=} \PY{n}{tf}\PY{o}{.}\PY{n}{keras}\PY{o}{.}\PY{n}{optimizers}\PY{o}{.}\PY{n}{Adam}\PY{p}{(}\PY{n}{lr}\PY{o}{=}\PY{l+m+mf}{0.001}\PY{p}{)}
+         
+         \PY{n}{alpha} \PY{o}{=} \PY{o}{.}\PY{l+m+mi}{56}
+         \PY{n}{states\PYZus{}wasted} \PY{o}{=} \PY{l+m+mi}{10}\PY{o}{*}\PY{o}{*}\PY{l+m+mi}{4}
+         \PY{n}{TAU} \PY{o}{=} \PY{l+m+mf}{0.08}
+         
+         \PY{n}{cumulative} \PY{o}{=} \PY{p}{[}\PY{p}{]}
+         \PY{k}{def} \PY{n+nf}{main}\PY{p}{(}\PY{p}{)}\PY{p}{:}
+             \PY{n}{cum\PYZus{}rews}\PY{o}{=}\PY{l+m+mi}{0}
+             \PY{k}{for} \PY{n}{episode} \PY{o+ow}{in} \PY{n+nb}{range}\PY{p}{(}\PY{n}{states\PYZus{}wasted}\PY{p}{)}\PY{p}{:}
+                 \PY{k}{if} \PY{n}{episode}\PY{o}{\PYZpc{}}\PY{k}{100} == 0:
+                     \PY{n+nb}{print}\PY{p}{(}\PY{n}{episode}\PY{p}{,} \PY{l+s+s2}{\PYZdq{}}\PY{l+s+s2}{ of }\PY{l+s+s2}{\PYZdq{}}\PY{p}{,} \PY{n}{states\PYZus{}wasted}\PY{p}{)}
+         
+                 \PY{n}{epsilon} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{exp}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{l+m+mf}{0.001}\PY{o}{*}\PY{n}{episode}\PY{p}{)}
+                 \PY{n}{phase} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{random}\PY{o}{.}\PY{n}{choice}\PY{p}{(}\PY{p}{[}\PY{o}{\PYZhy{}}\PY{l+m+mi}{1}\PY{p}{,}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{,}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}
+                 \PY{n}{labelbeta1}\PY{p}{,} \PY{n}{beta1} \PY{o}{=} \PY{n}{give\PYZus{}first\PYZus{}beta}\PY{p}{(}\PY{n}{epsilon}\PY{p}{)}
+                 \PY{n}{p0} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{exp}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{p}{(}\PY{n}{beta1}\PY{o}{\PYZhy{}}\PY{p}{(}\PY{n}{phase}\PY{o}{*}\PY{n}{np}\PY{o}{.}\PY{n}{cos}\PY{p}{(}\PY{n}{ats}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{)}\PY{o}{*}\PY{n}{alpha}\PY{p}{)}\PY{p}{)}\PY{o}{*}\PY{o}{*}\PY{l+m+mi}{2}\PY{p}{)}
+                 \PY{n}{outcome1} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{random}\PY{o}{.}\PY{n}{choice}\PY{p}{(}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{,}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{,}\PY{l+m+mi}{1}\PY{p}{,}\PY{n}{p}\PY{o}{=}\PY{p}{[}\PY{n}{p0}\PY{p}{,}\PY{l+m+mi}{1}\PY{o}{\PYZhy{}}\PY{n}{p0}\PY{p}{]}\PY{p}{)}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}
+                 \PY{n}{new\PYZus{}state} \PY{o}{=} \PY{p}{[}\PY{n}{outcome1}\PY{p}{,} \PY{n}{beta1}\PY{p}{]}
+                 \PY{n}{labelbeta2}\PY{p}{,} \PY{n}{beta2} \PY{o}{=} \PY{n}{give\PYZus{}second\PYZus{}beta}\PY{p}{(}\PY{n}{new\PYZus{}state}\PY{p}{,}\PY{n}{epsilon}\PY{p}{)}
+                 \PY{n}{p1} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{exp}\PY{p}{(}\PY{o}{\PYZhy{}}\PY{p}{(}\PY{n}{beta2}\PY{o}{\PYZhy{}}\PY{p}{(}\PY{n}{phase}\PY{o}{*}\PY{n}{np}\PY{o}{.}\PY{n}{sin}\PY{p}{(}\PY{n}{ats}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}\PY{p}{)}\PY{o}{*}\PY{n}{alpha}\PY{p}{)}\PY{p}{)}\PY{o}{*}\PY{o}{*}\PY{l+m+mi}{2}\PY{p}{)}
+                 \PY{n}{outcome2} \PY{o}{=} \PY{n}{np}\PY{o}{.}\PY{n}{random}\PY{o}{.}\PY{n}{choice}\PY{p}{(}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{,}\PY{l+m+mi}{1}\PY{p}{]}\PY{p}{,}\PY{l+m+mi}{1}\PY{p}{,}\PY{n}{p}\PY{o}{=}\PY{p}{[}\PY{n}{p1}\PY{p}{,}\PY{l+m+mi}{1}\PY{o}{\PYZhy{}}\PY{n}{p1}\PY{p}{]}\PY{p}{)}\PY{p}{[}\PY{l+m+mi}{0}\PY{p}{]}
+                 \PY{n}{new\PYZus{}state} \PY{o}{=} \PY{p}{[}\PY{n}{outcome1}\PY{p}{,} \PY{n}{outcome2}\PY{p}{,} \PY{n}{beta1}\PY{p}{,} \PY{n}{beta2}\PY{p}{]}
+                 \PY{n}{label\PYZus{}guess}\PY{p}{,} \PY{n}{guess} \PY{o}{=} \PY{n}{give\PYZus{}guess}\PY{p}{(}\PY{n}{new\PYZus{}state}\PY{p}{,}\PY{n}{epsilon}\PY{p}{)}
+                 \PY{k}{if} \PY{n}{guess} \PY{o}{==} \PY{n}{phase}\PY{p}{:}
+                     \PY{n}{reward} \PY{o}{=} \PY{l+m+mi}{1}
+                 \PY{k}{else}\PY{p}{:}
+                     \PY{n}{reward} \PY{o}{=} \PY{l+m+mi}{0}
+                 \PY{n}{buffer}\PY{o}{.}\PY{n}{add\PYZus{}sample}\PY{p}{(}\PY{p}{(}\PY{n}{outcome1}\PY{p}{,} \PY{n}{outcome2}\PY{p}{,} \PY{n}{beta1}\PY{p}{,} \PY{n}{beta2}\PY{p}{,} \PY{n}{labelbeta1}\PY{p}{,} \PY{n}{labelbeta2}\PY{p}{,} \PY{n}{guess}\PY{p}{,} \PY{n}{label\PYZus{}guess}\PY{p}{,} \PY{n}{reward}\PY{p}{)}\PY{p}{)}
+                 \PY{k}{if} \PY{n}{episode} \PY{o}{\PYZgt{}} \PY{l+m+mi}{10}\PY{o}{*}\PY{o}{*}\PY{l+m+mi}{2}\PY{p}{:}
+                     \PY{n}{learn}\PY{p}{(}\PY{p}{)}
+                 \PY{n}{cum\PYZus{}rews} \PY{o}{+}\PY{o}{=} \PY{n}{reward}
+                 \PY{n}{cumulative}\PY{o}{.}\PY{n}{append}\PY{p}{(}\PY{n}{cum\PYZus{}rews}\PY{p}{)}
+             \PY{k}{return} \PY{n}{cumulative}
+         \PY{n}{main}\PY{p}{(}\PY{p}{)}
+\end{Verbatim}
+
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+W1103 15:30:06.593185 139929372481344 base\_layer.py:1865] Layer qn\_l1\_10 is casting an input tensor from dtype float64 to the layer's dtype of float32, which is new behavior in TensorFlow 2.  The layer has dtype float32 because it's dtype defaults to floatx.
+
+If you intended to run this layer in float32, you can safely ignore this warning. If in doubt, this warning is likely only an issue if you are porting a TensorFlow 1.X model to TensorFlow 2.
+
+To change all layers to have dtype float64 by default, call `tf.keras.backend.set\_floatx('float64')`. To change just this layer, pass dtype='float64' to the layer constructor. If you are the author of this layer, you can disable autocasting by passing autocast=False to the base Layer constructor.
+
+W1103 15:30:06.607066 139929372481344 base\_layer.py:1865] Layer qn\_l2\_10 is casting an input tensor from dtype float64 to the layer's dtype of float32, which is new behavior in TensorFlow 2.  The layer has dtype float32 because it's dtype defaults to floatx.
+
+If you intended to run this layer in float32, you can safely ignore this warning. If in doubt, this warning is likely only an issue if you are porting a TensorFlow 1.X model to TensorFlow 2.
+
+To change all layers to have dtype float64 by default, call `tf.keras.backend.set\_floatx('float64')`. To change just this layer, pass dtype='float64' to the layer constructor. If you are the author of this layer, you can disable autocasting by passing autocast=False to the base Layer constructor.
+
+W1103 15:30:06.626836 139929372481344 base\_layer.py:1865] Layer qn\_guess\_10 is casting an input tensor from dtype float64 to the layer's dtype of float32, which is new behavior in TensorFlow 2.  The layer has dtype float32 because it's dtype defaults to floatx.
+
+If you intended to run this layer in float32, you can safely ignore this warning. If in doubt, this warning is likely only an issue if you are porting a TensorFlow 1.X model to TensorFlow 2.
+
+To change all layers to have dtype float64 by default, call `tf.keras.backend.set\_floatx('float64')`. To change just this layer, pass dtype='float64' to the layer constructor. If you are the author of this layer, you can disable autocasting by passing autocast=False to the base Layer constructor.
+
+W1103 15:30:06.691062 139929372481344 base\_layer.py:1865] Layer qn\_l1\_11 is casting an input tensor from dtype float64 to the layer's dtype of float32, which is new behavior in TensorFlow 2.  The layer has dtype float32 because it's dtype defaults to floatx.
+
+If you intended to run this layer in float32, you can safely ignore this warning. If in doubt, this warning is likely only an issue if you are porting a TensorFlow 1.X model to TensorFlow 2.
+
+To change all layers to have dtype float64 by default, call `tf.keras.backend.set\_floatx('float64')`. To change just this layer, pass dtype='float64' to the layer constructor. If you are the author of this layer, you can disable autocasting by passing autocast=False to the base Layer constructor.
+
+W1103 15:30:06.712627 139929372481344 base\_layer.py:1865] Layer qn\_l2\_11 is casting an input tensor from dtype float64 to the layer's dtype of float32, which is new behavior in TensorFlow 2.  The layer has dtype float32 because it's dtype defaults to floatx.
+
+If you intended to run this layer in float32, you can safely ignore this warning. If in doubt, this warning is likely only an issue if you are porting a TensorFlow 1.X model to TensorFlow 2.
+
+To change all layers to have dtype float64 by default, call `tf.keras.backend.set\_floatx('float64')`. To change just this layer, pass dtype='float64' to the layer constructor. If you are the author of this layer, you can disable autocasting by passing autocast=False to the base Layer constructor.
+
+W1103 15:30:06.787737 139929372481344 base\_layer.py:1865] Layer qn\_guess\_11 is casting an input tensor from dtype float64 to the layer's dtype of float32, which is new behavior in TensorFlow 2.  The layer has dtype float32 because it's dtype defaults to floatx.
+
+If you intended to run this layer in float32, you can safely ignore this warning. If in doubt, this warning is likely only an issue if you are porting a TensorFlow 1.X model to TensorFlow 2.
+
+To change all layers to have dtype float64 by default, call `tf.keras.backend.set\_floatx('float64')`. To change just this layer, pass dtype='float64' to the layer constructor. If you are the author of this layer, you can disable autocasting by passing autocast=False to the base Layer constructor.
+
+
+    \end{Verbatim}
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+0  of  10000
+100  of  10000
+200  of  10000
+300  of  10000
+400  of  10000
+500  of  10000
+600  of  10000
+700  of  10000
+800  of  10000
+900  of  10000
+1000  of  10000
+1100  of  10000
+1200  of  10000
+1300  of  10000
+1400  of  10000
+1500  of  10000
+1600  of  10000
+1700  of  10000
+1800  of  10000
+1900  of  10000
+2000  of  10000
+2100  of  10000
+2200  of  10000
+2300  of  10000
+2400  of  10000
+2500  of  10000
+2600  of  10000
+2700  of  10000
+2800  of  10000
+2900  of  10000
+3000  of  10000
+3100  of  10000
+3200  of  10000
+3300  of  10000
+3400  of  10000
+3500  of  10000
+3600  of  10000
+3700  of  10000
+3800  of  10000
+3900  of  10000
+4000  of  10000
+4100  of  10000
+4200  of  10000
+4300  of  10000
+4400  of  10000
+4500  of  10000
+4600  of  10000
+4700  of  10000
+4800  of  10000
+4900  of  10000
+5000  of  10000
+5100  of  10000
+5200  of  10000
+5300  of  10000
+5400  of  10000
+5500  of  10000
+5600  of  10000
+5700  of  10000
+5800  of  10000
+5900  of  10000
+6000  of  10000
+6100  of  10000
+6200  of  10000
+6300  of  10000
+6400  of  10000
+6500  of  10000
+6600  of  10000
+6700  of  10000
+6800  of  10000
+6900  of  10000
+7000  of  10000
+7100  of  10000
+7200  of  10000
+7300  of  10000
+7400  of  10000
+7500  of  10000
+7600  of  10000
+7700  of  10000
+7800  of  10000
+7900  of  10000
+8000  of  10000
+8100  of  10000
+8200  of  10000
+8300  of  10000
+8400  of  10000
+8500  of  10000
+8600  of  10000
+8700  of  10000
+8800  of  10000
+8900  of  10000
+9000  of  10000
+9100  of  10000
+9200  of  10000
+9300  of  10000
+9400  of  10000
+9500  of  10000
+9600  of  10000
+9700  of  10000
+9800  of  10000
+9900  of  10000
+
+    \end{Verbatim}
+
+\begin{Verbatim}[commandchars=\\\{\}]
+{\color{outcolor}Out[{\color{outcolor}15}]:} [0,
+          1,
+          1,
+          2,
+          3,
+          4,
+          4,
+          5,
+          5,
+          6,
+          6,
+          6,
+          7,
+          7,
+          8,
+          8,
+          9,
+          9,
+          9,
+          9,
+          10,
+          10,
+          10,
+          10,
+          11,
+          12,
+          12,
+          12,
+          12,
+          13,
+          13,
+          13,
+          13,
+          13,
+          13,
+          14,
+          15,
+          16,
+          16,
+          17,
+          17,
+          17,
+          17,
+          18,
+          18,
+          19,
+          19,
+          20,
+          21,
+          21,
+          21,
+          21,
+          21,
+          21,
+          22,
+          22,
+          23,
+          24,
+          24,
+          24,
+          24,
+          25,
+          26,
+          26,
+          27,
+          28,
+          28,
+          29,
+          29,
+          29,
+          30,
+          31,
+          31,
+          31,
+          32,
+          32,
+          32,
+          33,
+          34,
+          34,
+          34,
+          34,
+          35,
+          36,
+          37,
+          38,
+          38,
+          38,
+          38,
+          39,
+          39,
+          40,
+          40,
+          41,
+          41,
+          41,
+          42,
+          42,
+          43,
+          43,
+          44,
+          44,
+          44,
+          45,
+          46,
+          46,
+          46,
+          46,
+          46,
+          47,
+          47,
+          47,
+          48,
+          48,
+          48,
+          48,
+          49,
+          49,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          56,
+          56,
+          57,
+          58,
+          58,
+          59,
+          59,
+          59,
+          60,
+          60,
+          61,
+          62,
+          62,
+          62,
+          62,
+          63,
+          64,
+          65,
+          65,
+          65,
+          66,
+          67,
+          67,
+          67,
+          68,
+          68,
+          69,
+          70,
+          70,
+          71,
+          72,
+          72,
+          73,
+          74,
+          75,
+          75,
+          75,
+          75,
+          75,
+          76,
+          77,
+          78,
+          79,
+          80,
+          81,
+          81,
+          82,
+          82,
+          83,
+          84,
+          85,
+          85,
+          85,
+          86,
+          86,
+          87,
+          87,
+          88,
+          88,
+          89,
+          89,
+          90,
+          90,
+          91,
+          92,
+          92,
+          93,
+          93,
+          94,
+          94,
+          94,
+          95,
+          95,
+          95,
+          95,
+          95,
+          95,
+          95,
+          96,
+          96,
+          97,
+          97,
+          97,
+          97,
+          97,
+          98,
+          99,
+          99,
+          100,
+          100,
+          100,
+          100,
+          100,
+          100,
+          101,
+          102,
+          103,
+          103,
+          103,
+          103,
+          103,
+          103,
+          103,
+          104,
+          105,
+          105,
+          106,
+          107,
+          108,
+          109,
+          109,
+          109,
+          109,
+          110,
+          110,
+          111,
+          111,
+          111,
+          112,
+          113,
+          113,
+          114,
+          114,
+          115,
+          116,
+          117,
+          118,
+          119,
+          120,
+          120,
+          120,
+          121,
+          122,
+          122,
+          123,
+          124,
+          125,
+          126,
+          126,
+          126,
+          126,
+          127,
+          128,
+          128,
+          129,
+          130,
+          130,
+          130,
+          131,
+          131,
+          132,
+          133,
+          134,
+          134,
+          135,
+          136,
+          136,
+          137,
+          137,
+          138,
+          138,
+          139,
+          139,
+          140,
+          141,
+          141,
+          141,
+          142,
+          142,
+          142,
+          143,
+          144,
+          145,
+          146,
+          146,
+          147,
+          148,
+          149,
+          150,
+          151,
+          151,
+          152,
+          152,
+          153,
+          153,
+          153,
+          154,
+          155,
+          155,
+          156,
+          157,
+          158,
+          158,
+          158,
+          158,
+          158,
+          158,
+          159,
+          160,
+          161,
+          161,
+          162,
+          163,
+          164,
+          164,
+          164,
+          165,
+          166,
+          166,
+          166,
+          167,
+          168,
+          168,
+          168,
+          169,
+          170,
+          171,
+          171,
+          171,
+          172,
+          173,
+          174,
+          175,
+          175,
+          176,
+          176,
+          176,
+          177,
+          177,
+          178,
+          178,
+          179,
+          180,
+          180,
+          180,
+          181,
+          181,
+          182,
+          183,
+          183,
+          183,
+          184,
+          185,
+          185,
+          186,
+          186,
+          187,
+          188,
+          188,
+          188,
+          189,
+          190,
+          191,
+          192,
+          192,
+          192,
+          192,
+          193,
+          194,
+          195,
+          196,
+          196,
+          197,
+          197,
+          197,
+          197,
+          198,
+          199,
+          199,
+          199,
+          199,
+          199,
+          200,
+          200,
+          200,
+          201,
+          201,
+          202,
+          203,
+          204,
+          205,
+          206,
+          206,
+          207,
+          208,
+          209,
+          210,
+          211,
+          211,
+          212,
+          212,
+          213,
+          214,
+          214,
+          214,
+          214,
+          214,
+          215,
+          216,
+          216,
+          217,
+          218,
+          219,
+          220,
+          221,
+          221,
+          222,
+          222,
+          222,
+          223,
+          224,
+          224,
+          225,
+          226,
+          227,
+          227,
+          227,
+          227,
+          228,
+          228,
+          229,
+          229,
+          230,
+          230,
+          230,
+          230,
+          230,
+          231,
+          232,
+          233,
+          233,
+          234,
+          234,
+          234,
+          234,
+          235,
+          236,
+          236,
+          237,
+          238,
+          239,
+          239,
+          239,
+          239,
+          240,
+          241,
+          241,
+          242,
+          242,
+          243,
+          243,
+          243,
+          244,
+          245,
+          245,
+          245,
+          245,
+          246,
+          247,
+          247,
+          248,
+          248,
+          249,
+          249,
+          250,
+          251,
+          252,
+          253,
+          253,
+          253,
+          254,
+          254,
+          254,
+          254,
+          254,
+          254,
+          254,
+          255,
+          256,
+          256,
+          256,
+          256,
+          256,
+          256,
+          257,
+          257,
+          258,
+          258,
+          258,
+          259,
+          259,
+          260,
+          261,
+          261,
+          262,
+          263,
+          264,
+          265,
+          266,
+          267,
+          267,
+          267,
+          267,
+          268,
+          268,
+          269,
+          270,
+          271,
+          272,
+          272,
+          273,
+          273,
+          273,
+          274,
+          274,
+          275,
+          275,
+          276,
+          276,
+          277,
+          278,
+          278,
+          279,
+          279,
+          280,
+          281,
+          281,
+          282,
+          282,
+          282,
+          282,
+          282,
+          282,
+          283,
+          284,
+          285,
+          286,
+          287,
+          288,
+          288,
+          289,
+          290,
+          291,
+          291,
+          291,
+          292,
+          292,
+          292,
+          293,
+          293,
+          293,
+          294,
+          295,
+          296,
+          296,
+          297,
+          297,
+          298,
+          298,
+          299,
+          300,
+          300,
+          300,
+          301,
+          302,
+          303,
+          303,
+          303,
+          304,
+          304,
+          305,
+          306,
+          307,
+          308,
+          308,
+          308,
+          308,
+          309,
+          310,
+          311,
+          311,
+          312,
+          313,
+          313,
+          313,
+          314,
+          315,
+          315,
+          316,
+          316,
+          317,
+          317,
+          317,
+          317,
+          318,
+          319,
+          319,
+          320,
+          320,
+          320,
+          321,
+          321,
+          321,
+          322,
+          322,
+          322,
+          323,
+          324,
+          324,
+          324,
+          324,
+          324,
+          324,
+          324,
+          324,
+          325,
+          325,
+          325,
+          326,
+          326,
+          326,
+          326,
+          326,
+          327,
+          328,
+          328,
+          329,
+          329,
+          330,
+          331,
+          332,
+          333,
+          334,
+          335,
+          335,
+          336,
+          337,
+          338,
+          339,
+          339,
+          340,
+          341,
+          341,
+          342,
+          342,
+          343,
+          344,
+          345,
+          346,
+          346,
+          347,
+          347,
+          348,
+          349,
+          349,
+          350,
+          351,
+          352,
+          353,
+          354,
+          354,
+          354,
+          354,
+          354,
+          355,
+          356,
+          357,
+          358,
+          359,
+          360,
+          360,
+          360,
+          361,
+          362,
+          363,
+          364,
+          364,
+          365,
+          365,
+          366,
+          367,
+          368,
+          368,
+          369,
+          370,
+          371,
+          371,
+          372,
+          372,
+          372,
+          373,
+          373,
+          374,
+          375,
+          375,
+          376,
+          376,
+          377,
+          377,
+          378,
+          379,
+          379,
+          379,
+          380,
+          381,
+          381,
+          382,
+          383,
+          384,
+          385,
+          386,
+          387,
+          388,
+          389,
+          389,
+          389,
+          390,
+          391,
+          392,
+          393,
+          394,
+          394,
+          395,
+          396,
+          397,
+          398,
+          398,
+          399,
+          399,
+          399,
+          399,
+          399,
+          400,
+          401,
+          402,
+          403,
+          404,
+          405,
+          406,
+          407,
+          407,
+          408,
+          409,
+          410,
+          411,
+          412,
+          412,
+          413,
+          414,
+          415,
+          416,
+          417,
+          418,
+          419,
+          420,
+          420,
+          420,
+          420,
+          421,
+          422,
+          423,
+          423,
+          424,
+          425,
+          426,
+          427,
+          428,
+          429,
+          430,
+          431,
+          432,
+          433,
+          434,
+          435,
+          435,
+          436,
+          437,
+          438,
+          439,
+          439,
+          440,
+          441,
+          441,
+          442,
+          443,
+          444,
+          444,
+          445,
+          445,
+          446,
+          446,
+          447,
+          448,
+          449,
+          450,
+          450,
+          451,
+          451,
+          452,
+          453,
+          454,
+          454,
+          455,
+          456,
+          456,
+          457,
+          458,
+          459,
+          460,
+          461,
+          462,
+          463,
+          464,
+          465,
+          465,
+          466,
+          467,
+          467,
+          467,
+          468,
+          468,
+          468,
+          468,
+          469,
+          469,
+          470,
+          470,
+          470,
+          471,
+          471,
+          471,
+          472,
+          473,
+          474,
+          475,
+          476,
+          477,
+          478,
+          479,
+          480,
+          480,
+          480,
+          480,
+          481,
+          482,
+          483,
+          484,
+          485,
+          486,
+          486,
+          486,
+          487,
+          488,
+          489,
+          490,
+          491,
+          492,
+          493,
+          493,
+          494,
+          495,
+          496,
+          497,
+          497,
+          498,
+          499,
+          500,
+          501,
+          502,
+          503,
+          503,
+          503,
+          503,
+          503,
+          503,
+          504,
+          505,
+          506,
+          507,
+          508,
+          509,
+          509,
+          509,
+          509,
+          509,
+          510,
+          511,
+          511,
+          512,
+          513,
+          513,
+          514,
+          514,
+          515,
+          516,
+          517,
+          518,
+          519,
+          520,
+          521,
+          521,
+          521,
+          521,
+          522,
+          523,
+          523,
+          523,
+          524,
+          525,
+          526,
+          527,
+          527,
+          527,
+          528,
+          529,
+          530,
+          530,
+          531,
+          532,
+          533,
+          533,
+          534,
+          534,
+          534,
+          534,
+          535,
+          536,
+          536,
+          536,
+          537,
+          538,
+          539,
+          539,
+          540,
+          540,
+          541,
+          542,
+          543,
+          544,
+          545,
+          546,
+          546,
+          546,
+          546,
+          547,
+          548,
+          549,
+          550,
+          551,
+          551,
+          551,
+          552,
+          553,
+          554,
+          555,
+          556,
+          556,
+          557,
+          557,
+          557,
+          558,
+          559,
+          559,
+          559,
+          560,
+          561,
+          562,
+          563,
+          564,
+          565,
+          566,
+          566,
+          566,
+          566,
+          566,
+          {\ldots}]
+\end{Verbatim}
+            
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}16}]:} \PY{n}{cumulative}\PY{o}{/}\PY{n}{np}\PY{o}{.}\PY{n}{arange}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,}\PY{n}{states\PYZus{}wasted}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{)}
+\end{Verbatim}
+
+
+\begin{Verbatim}[commandchars=\\\{\}]
+{\color{outcolor}Out[{\color{outcolor}16}]:} array([0.        , 0.5       , 0.33333333, {\ldots}, 0.81856371, 0.81858186,
+                0.8186    ])
+\end{Verbatim}
+            
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}17}]:} \PY{k+kn}{import} \PY{n+nn}{matplotlib}\PY{n+nn}{.}\PY{n+nn}{pyplot} \PY{k}{as} \PY{n+nn}{plt}
+\end{Verbatim}
+
+
+    \begin{Verbatim}[commandchars=\\\{\}]
+{\color{incolor}In [{\color{incolor}18}]:} \PY{n}{plt}\PY{o}{.}\PY{n}{plot}\PY{p}{(}\PY{n}{cumulative}\PY{o}{/}\PY{n}{np}\PY{o}{.}\PY{n}{arange}\PY{p}{(}\PY{l+m+mi}{1}\PY{p}{,}\PY{n}{states\PYZus{}wasted}\PY{o}{+}\PY{l+m+mi}{1}\PY{p}{)}\PY{p}{)}
+\end{Verbatim}
+
+
+\begin{Verbatim}[commandchars=\\\{\}]
+{\color{outcolor}Out[{\color{outcolor}18}]:} [<matplotlib.lines.Line2D at 0x7f438dd39898>]
+\end{Verbatim}
+            
+    \begin{center}
+    \adjustimage{max size={0.9\linewidth}{0.9\paperheight}}{output_3_1.png}
+    \end{center}
+    { \hspace*{\fill} \\}
+    
+
+    % Add a bibliography block to the postdoc
+    
+    
+    
+    \end{document}
