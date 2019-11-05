@@ -11,17 +11,17 @@ from networks import QN_l1, QN_l2, QN_guess
 from learn import learn
 import give_probability
 
-basic = basics.Basics(resolution=.1)
+basic = basics.Basics(resolution=.01, bound_displacements=1)
 basic.define_actions()
 ats = misc.make_attenuations(layers=2)
 
 
-qn_l1_prim = QN_l1(basic.actions[0])
-qn_l1_targ = QN_l1(basic.actions[0])
-qn_l2_prim = QN_l2(basic.actions[1])
-qn_l2_targ = QN_l2(basic.actions[1])
-qn_guess_prim = QN_guess(basic.possible_phases)
-qn_guess_targ = QN_guess(basic.possible_phases)
+qn_l1_prim = QN_l1(basic.actions[0], dirname_backup_weights="qn_l1_prim")
+qn_l1_targ = QN_l1(basic.actions[0], dirname_backup_weights="qn_l1_targ")
+qn_l2_prim = QN_l2(basic.actions[1], dirname_backup_weights="qn_l2_prim")
+qn_l2_targ = QN_l2(basic.actions[1], dirname_backup_weights="qn_l2_targ")
+qn_guess_prim = QN_guess(basic.possible_phases, dirname_backup_weights="qn_guess_prim")
+qn_guess_targ = QN_guess(basic.possible_phases, dirname_backup_weights="qn_guess_prim")
 
 networks = [qn_l1_prim, qn_l1_targ, qn_l2_prim, qn_l2_targ, qn_guess_prim, qn_guess_targ]
 
@@ -34,17 +34,17 @@ buffer = Memory(10E4)
 
 r = misc.Record("Results")
 
-def main(states_wasted=10**2):
+def main(states_wasted=3*10**2):
     cumulative = []
     success_prob_evolution = []
     cum_rews=0
     alpha = .56
     for episode in range(states_wasted):
-        if episode%100 == 0:
+        if episode%10 == 0:
             print(episode, " of ", states_wasted)
             if episode>1:
                 print("cumulative: ", str(cumulative[-1]/episode))
-                print("p_s_greedy: ", str(probability_greedy()))
+                print("p_s_greedy: ", str(give_probability.probability_greedy( ats, alpha, networks = [qn_l1_prim, qn_l2_prim, qn_guess_prim]    )))
         epsilon = max(0.01, np.exp(-episode/500))
         phase = np.random.choice([-1,1],1)[0]
         labelbeta1, beta1 = qn_l1_prim.give_first_beta(epsilon)
@@ -61,8 +61,12 @@ def main(states_wasted=10**2):
         else:
             reward = 0
         buffer.add_sample((outcome1, outcome2, beta1, beta2, labelbeta1, labelbeta2, guess, label_guess, reward))
-        if episode > 500:
-            learn(networks, optimizers, buffer, batch_length=episode, TAU =10E-2)
+        if episode > 1:
+            learn(networks, optimizers, buffer, batch_length=episode, TAU =10E-3)
+
+            # if episode % 10 == 0:
+            #     for i in networks:
+            #         i.save_now()
         cum_rews += reward
         success_prob_evolution.append(give_probability.probability_greedy(ats, alpha, networks = [qn_l1_prim, qn_l2_prim, qn_guess_prim]))
         cumulative.append(cum_rews)
@@ -72,7 +76,7 @@ def main(states_wasted=10**2):
     return
 
 
-main()
+main(10**4)
 
 
 ####

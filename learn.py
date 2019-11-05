@@ -19,6 +19,7 @@ def learn(networks, optimizers, buffer, batch_length=10E3, TAU=0.01):
     qlabels_l1 = update_for_q_1_prim.copy()
     qlabels_l1[np.arange(batch_length), labels_beta1] = np.squeeze(qn_l2_targ(np.expand_dims(s_2_batch, axis=0)).numpy())[np.arange(batch_length),opt_a_2_prim]
 
+    optimizer_ql1, optimizer_ql2, optimizer_guess = optimizers
 
 
     with tf.device("/cpu:0"):
@@ -79,7 +80,7 @@ def learn(networks, optimizers, buffer, batch_length=10E3, TAU=0.01):
             loss = tf.reduce_mean(loss_sum)
 
             grads = tape.gradient(loss, qn_guess_prim.trainable_variables)
-            optimizer_ql3.apply_gradients(zip(grads, qn_guess_prim.trainable_variables))
+            optimizer_guess.apply_gradients(zip(grads, qn_guess_prim.trainable_variables))
 
     for t, e in zip(qn_l1_targ.trainable_variables, qn_l1_prim.trainable_variables):
         t.assign(t*(1-TAU) + e*TAU)

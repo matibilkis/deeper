@@ -17,5 +17,6 @@ def probability_greedy(ats, alpha, networks):
         for n2 in [0,1]:
             l2, beta2 = qn_l2.give_second_beta([n1, beta1], epsilon=0)
             gueslabel, guess_phase = qn_guess.give_guess([n1,n2,beta1,beta2], epsilon=0)
+            print(guess_phase)
             p+= prob(beta1, guess_phase*np.cos(ats[0])*alpha,n1)*prob(beta2, guess_phase*np.sin(ats[0])*alpha, n2)
     return p/2

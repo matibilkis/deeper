@@ -28,6 +28,7 @@ class Record():
             os.makedirs("run_"+str(int(a)+1))
         os.chdir("run_"+str(int(a)+1)) #I leave you in this directory
         # os.chdir("..")
+        os.makedirs("networks_checkpoints")
         return int(a)+1
 
 

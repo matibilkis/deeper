@@ -4,9 +4,11 @@ import numpy as np
 
 
 class QN_l1(tf.keras.Model):
-    def __init__(self, betas):
+    def __init__(self, betas, dirname_backup_weights= "None"):
         super(QN_l1,self).__init__()
         self.betas = betas
+        self.dirname_backup_weights = dirname_backup_weights
+
         self.l1 = Dense(30, input_shape=(0,), kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=1.0, seed=None),
                 bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=1.0, seed=None))
         self.l2 = Dense(35, kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=1.0, seed=None),
@@ -35,8 +37,12 @@ class QN_l1(tf.keras.Model):
             beta1 = self.betas[label]
             return label, beta1
 
+    def save_now(self):
+        tf.keras.models.save_model(self,str(self.dirname_backup_weights))
+        return
+
 class QN_l2(tf.keras.Model):
-    def __init__(self,betas):
+    def __init__(self,betas, dirname_backup_weights= "None"):
         super(QN_l2,self).__init__()
         self.betas = betas
         self.l1 = Dense(30, input_shape=(1,2), kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=1.0, seed=None),
@@ -68,9 +74,13 @@ class QN_l2(tf.keras.Model):
             beta2 = self.betas[label]
             return label, beta2
 
+    def save_now(self):
+        self.save_weigths(str(self.dirname_backup_weights))
+        return
+
 
 class QN_guess(tf.keras.Model):
-    def __init__(self,phases):
+    def __init__(self,phases, dirname_backup_weights= "None"):
         super(QN_guess,self).__init__()
         self.phases = phases
         self.l1 = Dense(30, input_shape=(1,4), kernel_initializer='random_uniform',
@@ -80,8 +90,11 @@ class QN_guess(tf.keras.Model):
 
         self.l3 = Dense(len(self.phases), kernel_initializer='random_uniform',
                 bias_initializer='random_uniform')
-
+        # self.c=0
     def call(self, input):
+        # print(self.c)
+        # self._set_inputs(input)
+        # self.c+=1
         feat = tf.nn.relu(self.l1(input))
         feat = tf.nn.relu(self.l2(feat))
         # feat = tf.nn.relu(self.l21(feat))
@@ -100,3 +113,6 @@ class QN_guess(tf.keras.Model):
             label = np.argmax(guess)
             guess = self.phases[label]
             return int((guess+1)/2), guess
+    def save_now(self):
+        self.save_weigths(str(self.dirname_backup_weights))
+        return
