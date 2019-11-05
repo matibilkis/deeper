@@ -5,7 +5,7 @@ import tensorflow as tf
 from tensorflow.keras.layers import Dense
 import random
 
-basic = basics.Basics(resolution=.25)
+basic = basics.Basics(resolution=.01)
 basic.define_actions()
 actions = basic.actions
 ats = misc.make_attenuations(layers=2)
@@ -244,12 +244,16 @@ optimizer_ql2 = tf.keras.optimizers.Adam(lr=0.001)
 optimizer_ql3 = tf.keras.optimizers.Adam(lr=0.001)
 
 alpha = .56
-states_wasted = 10**3
+states_wasted = 10**4
 TAU = 0.08
 
-cum_rews = []
+cumulative = []
 def main():
+    cum_rews=0
     for episode in range(states_wasted):
+        if episode%100 == 0:
+            print(episode, " of ", states_wasted)
+
         epsilon = np.exp(-0.001*episode)
         phase = np.random.choice([-1,1],1)[0]
         labelbeta1, beta1 = give_first_beta(epsilon)
@@ -268,6 +272,7 @@ def main():
         buffer.add_sample((outcome1, outcome2, beta1, beta2, labelbeta1, labelbeta2, guess, label_guess, reward))
         if episode > 10**2:
             learn()
-        cum_rews.append(np.sum(cum_rews)+reward)
-    return cum_rews/np.arange(1, states_wasted+1)
+        cum_rews += reward
+        cumulative.append(cum_rews)
+    return cumulative
 main()
