@@ -26,7 +26,8 @@ def main(states_wasted=10**4):
             if episode%100==1:
                 print("cumulative: ", str(cumulative[-1]/episode))
                 print("p_s_greedy: ", str(give_probability.probability_greedy( ats, alpha, networks = [qn_l1_prim, qn_l2_prim, qn_guess_prim]    )))
-        epsilon = max(0.01, np.exp(-episode/500))
+        # epsilon = max(0.01, np.exp(-episode/500))
+        epsilon = 1
         phase = np.random.choice([-1,1],1)[0]
         labelbeta1, beta1 = qn_l1_prim.give_first_beta(epsilon)
         p0 = np.exp(-(beta1-(phase*np.cos(ats[0])*alpha))**2)
@@ -81,8 +82,8 @@ def main(states_wasted=10**4):
 
 
 
-taus = [1E-1, 1E-2, 1E-3, 1E-4, 1E-5, 1E-6]
-lr = [1E-1, 1E-2, 1E-3, 1E-4, 1E-5, 1E-6]
+taus = [1E-1, 1E-2, 1E-3, 1E-4]
+lr = [1E-1,0.05, 1E-2, 1E-3]
 params = []
 for tau in taus:
     for lrs in lr:
@@ -93,7 +94,7 @@ for run in range(5):
     begin = datetime.now()
 
 
-    basic = basics.Basics(resolution=.01, bound_displacements=1)
+    basic = basics.Basics(resolution=.1, bound_displacements=1)
     basic.define_actions()
     ats = misc.make_attenuations(layers=2)
 
@@ -118,8 +119,9 @@ for run in range(5):
 
     buffer = Memory(10E4)
 
-    r = misc.Record("Results")
-    main(5*10**4)
+    r = misc.Record("Results-epsilon1")
+    main(10**4)
     os.chdir("../..")
 
     ####
+os.system("python3 todo.py")
