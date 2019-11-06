@@ -25,9 +25,9 @@ qn_guess_targ = QN_guess(basic.possible_phases, dirname_backup_weights="qn_guess
 
 networks = [qn_l1_prim, qn_l1_targ, qn_l2_prim, qn_l2_targ, qn_guess_prim, qn_guess_targ]
 
-optimizer_l1 = tf.keras.optimizers.Adam(lr=10E-4)
-optimizer_l2 = tf.keras.optimizers.Adam(lr=10E-4)
-optimizer_guess = tf.keras.optimizers.Adam(lr=10E-4)
+optimizer_l1 = tf.keras.optimizers.Adam(lr=10E-1)
+optimizer_l2 = tf.keras.optimizers.Adam(lr=10E-1)
+optimizer_guess = tf.keras.optimizers.Adam(lr=10E-1)
 optimizers = [optimizer_l1, optimizer_l2, optimizer_guess]
 
 buffer = Memory(10E4)
@@ -62,7 +62,7 @@ def main(states_wasted=3*10**2):
             reward = 0
         buffer.add_sample((outcome1, outcome2, beta1, beta2, labelbeta1, labelbeta2, guess, label_guess, reward))
         if episode > 1:
-            learn(networks, optimizers, buffer, batch_length=episode, TAU =10E-3)
+            learn(networks, optimizers, buffer, batch_length=episode, TAU =10E-2)
 
             # if episode % 10 == 0:
             #     for i in networks:
@@ -72,7 +72,8 @@ def main(states_wasted=3*10**2):
         cumulative.append(cum_rews)
         #if episode%10**3 == 0:
          #   save_parameters()
-    np.save("resuts.npy", [np.arange(1, states_wasted+1), cumulative, success_prob_evolution], allow_pickle=True)
+        if episode%100==0:
+            np.save("resuts.npy", [np.arange(1, states_wasted+1), cumulative, success_prob_evolution], allow_pickle=True)
     return
 
 
