@@ -9,10 +9,10 @@ class QN_l1(tf.keras.Model):
         self.betas = betas
         self.dirname_backup_weights = dirname_backup_weights
 
-        self.l1 = Dense(4, input_shape=(0,), kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=0.5, seed=None),
-                bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=0.5, seed=None))
-        self.l2 = Dense(4, kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=0.5, seed=None),
-                bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=0.5, seed=None))
+        self.l1 = Dense(4, input_shape=(0,), kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=1.0, seed=14),
+                bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=1.0, seed=14))
+        self.l2 = Dense(4, kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=1.0, seed=14),
+                bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=1.0, seed=14))
 
         self.l3 = Dense(len(self.betas), kernel_initializer='random_uniform',
                 bias_initializer='random_uniform')
@@ -23,7 +23,7 @@ class QN_l1(tf.keras.Model):
         feat = tf.nn.relu(self.l1(input))
         feat = tf.nn.relu(self.l2(feat))
         value = self.l3(feat)
-        return tf.clip_by_value(10*value, 0, 1)
+        return value
 
     def give_first_beta(self, epsilon):
         if np.random.random() < epsilon:
@@ -45,10 +45,10 @@ class QN_l2(tf.keras.Model):
     def __init__(self,betas, dirname_backup_weights= "None"):
         super(QN_l2,self).__init__()
         self.betas = betas
-        self.l1 = Dense(4, input_shape=(1,2), kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=0.5, seed=None),
-                bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=0.5, seed=None))
-        self.l2 = Dense(4, kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=0.5, seed=None),
-                bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=0.5, seed=None))
+        self.l1 = Dense(4, input_shape=(1,2), kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=1.0, seed=14),
+                bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=1.0, seed=14))
+        self.l2 = Dense(4, kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=1.0, seed=14),
+                bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=1.0, seed=14))
 
         self.l3 = Dense(len(self.betas), kernel_initializer='random_uniform',
                 bias_initializer='random_uniform')
@@ -83,13 +83,13 @@ class QN_guess_kennedy(tf.keras.Model):
     def __init__(self,phases, dirname_backup_weights= "None"):
         super(QN_guess_kennedy,self).__init__()
         self.phases = phases
-        self.l1 = Dense(4, input_shape=(1,2), kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=0.5, seed=None),
-                bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=0.5, seed=None))
-        self.l2 = Dense(4, kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=0.5, seed=None),
-                bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=0.5, seed=None))
+        self.l1 = Dense(4, input_shape=(1,2), kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=1.0, seed=14),
+                bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=1.0, seed=14))
+        self.l2 = Dense(4, kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=1.0, seed=14),
+                bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=1.0, seed=14))
 
-        self.l3 = Dense(len(self.phases), kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=0.5, seed=None),
-                bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=0.5, seed=None))
+        self.l3 = Dense(len(self.phases), kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=1.0, seed=14),
+                bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=1.0, seed=14))
         # self.c=0
     def call(self, input):
         # print(self.c)
@@ -99,7 +99,7 @@ class QN_guess_kennedy(tf.keras.Model):
         feat = tf.nn.relu(self.l2(feat))
         # feat = tf.nn.relu(self.l21(feat))
         value = self.l3(feat)
-        return tf.clip_by_value(10*value, 0, 1)
+        return value
 
 
     def give_guess(self,new_state, epsilon):
