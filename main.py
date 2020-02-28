@@ -11,7 +11,7 @@ from nets import Q1
 import random
 
 
-def real_training(run_id, number_betas=10, lr = 10**-2, T=1000, batch_size=100):
+def real_training(run_id, number_betas=10, lr = 10**-3, T=1000, batch_size=100):
 
     q1=Q1()
     optimizer = tf.keras.optimizers.Adam(lr = lr)
@@ -19,14 +19,13 @@ def real_training(run_id, number_betas=10, lr = 10**-2, T=1000, batch_size=100):
     rt=[]
     rts = []
 
-
     betas = np.arange(-1,0,1/number_betas)
     ntable=np.zeros(len(betas))
 
     optimal = max(ps(betas))
     buffer = ReplayBuffer(buffer_size=T)
     for episode in tqdm(range(T)):
-        ep = max(np.exp(-episode/100),0.1)
+        ep = max(np.exp(-episode/100),0.01)
         label, beta = greedy_action(q1, betas, ep)
         ntable[label]+=1
         reward = np.random.choice([1.,0.],1, p=[ps(beta), 1-ps(beta)])[0]
@@ -48,7 +47,7 @@ def real_training(run_id, number_betas=10, lr = 10**-2, T=1000, batch_size=100):
             pt.append(0.5)
     rtsum = rts/np.arange(1,T+1)
     predictions = q1.prediction(betas)
-    plot_evolution(rtsum, pt, optimal, betas, predictions , run_id)
+    plot_evolution(rtsum, pt, optimal, b-{ñetas, predictions , run_id)
 
     data = "betas: " +str(betas)+"\nBernoulli rewards!\nOptimizer: "+optimizer.__str__()+"\nbuffer_batch_size: "+str(batch_size)
     data = data + "\nLearning rate: "+str(lr)+"\nEpsilon decaying! e^{-t/100}" + "\nBuffer size: "+str(buffer.buffer_size)
@@ -65,4 +64,4 @@ os.chdir("results")
 
 run_id=record()
 number_run = "run_"+str(run_id)
-real_training(number_run, T=240)
+real_training(number_run, T=1000)

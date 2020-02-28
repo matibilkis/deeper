@@ -1,0 +1,7 @@
+betas: [-1.  -0.9 -0.8 -0.7 -0.6 -0.5 -0.4 -0.3 -0.2 -0.1]
+Bernoulli rewards!
+Optimizer: <tensorflow.python.keras.optimizer_v2.adam.Adam object at 0x7f2d2cbde668>
+buffer_batch_size: 100
+Learning rate: 0.001
+Epsilon decaying! e^{-t/100}
+Buffer size: 1000
