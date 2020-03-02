@@ -114,12 +114,11 @@ def ps(beta):
 
 
 
-def greedy_action(q1, betas, ep=1):
+def greedy_action(q1, betas, ep=0):
     if np.random.random()<ep:
         l = np.random.choice(range(len(betas)), 1)[0]
         return l, betas[l]
     else:
-
         qs= np.squeeze(q1(np.expand_dims(betas, axis=1)).numpy())
         l=np.where(qs==max(qs))[0][0]
         return l, betas[l]
@@ -180,53 +179,3 @@ def plot_evolution(rt, pt, optimal, betas, preds, run_id):
     plt.savefig(run_id+"/learning_curves.png")
     plt.close()
     return
-
-
-
-# from collections import deque
-#
-# class ReplayBuffer_aal:
-#     """Constructs a buffer object that stores the past moves
-#     and samples a set of subsamples"""
-#
-#     def __init__(self, ize):
-#         self.buffer_size = buffer_size
-#         self.count = 0
-#         self.buffer = deque()
-#
-#     def add(self, s, a, r, d, s2):
-#         """Add an experience to the buffer"""
-#         # S represents current state, a is action,
-#         # r is reward, d is whether it is the end,
-#         # and s2 is next state
-#         experience = (s, a, r, d, s2)
-#         if self.count < self.buffer_size:
-#             self.buffer.append(experience)
-#             self.count += 1
-#         else:
-#             self.buffer.popleft()
-#             self.buffer.append(experience)
-#
-#     def size(self):
-#         return self.count
-#
-#     def sample(self, batch_size):
-#         """Samples a total of elements equal to batch_size from buffer
-#         if buffer contains enough elements. Otherwise return all elements"""
-#
-#         batch = []
-#
-#         if self.count < batch_size:
-#             batch = random.sample(self.buffer, self.count)
-#         else:
-#             batch = random.sample(self.buffer, batch_size)
-#
-#         # Maps each experience in batch in batches of states, actions, rewards
-#         # and new states
-#         s_batch, a_batch, r_batch, d_batch, s2_batch = list(map(np.array, list(zip(*batch))))
-#
-#         return s_batch, a_batch, r_batch, d_batch, s2_batch
-#
-#     def clear(self):
-#         self.buffer.clear()
-#         self.count = 0
