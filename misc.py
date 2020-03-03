@@ -1,10 +1,14 @@
+import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import os
 from collections import deque
 import random
 
-def make_figure(run_id,lr, Nbatch, loss_train, loss_test, predictions, epochs, betas_train, shuffle="False"):
+
+
+def make_figure(run_id,lr, Nbatch, loss_train, loss_test, predictions,
+ epochs, betas_train, shuffle="False"):
     name_title = "Learning rate: "+ str(lr)+ "\nNumber of batches: "+str(Nbatch)
     name="lr"+str(lr)+"_"+"nb"+str(Nbatch)
     if shuffle == "True":
@@ -120,7 +124,14 @@ def greedy_action(q1, betas, ep=0):
         return l, betas[l]
     else:
         qs= np.squeeze(q1(np.expand_dims(betas, axis=1)).numpy())
-        l=np.where(qs==max(qs))[0][0]
+        l=np.where(qs==max(qs))[0]
+        # print(qs)
+        # print(ps(betas))
+        # print("***")
+        if len(l)>1:
+            l=np.random.choice(l,1)[0]
+        else:
+            l=l[0]
         return l, betas[l]
 
 
@@ -151,7 +162,6 @@ class ReplayBuffer:
         else:
             batch = random.sample(self.buffer, batch_size)
         a_batch, r_batch= list(map(np.array, list(zip(*batch))))
-
         return a_batch, r_batch
 
     def clear(self):
@@ -159,23 +169,55 @@ class ReplayBuffer:
         self.count = 0
 
 
-def plot_evolution(rt, pt, optimal, betas, preds, run_id):
-    plt.figure(figsize=(30,15))
-    T=len(rt)
-    ax1=plt.subplot2grid((2,2),(0,0))
-    ax2=plt.subplot2grid((2,2),(1,0))
-    ax3=plt.subplot2grid((2,2),(0,1), rowspan=2)
+def plot_evolution(rt, pt, optimal, betas, preds, loss=False, history_betas=False,run_id="algo"):
+    matplotlib.rc('font', serif='cm10')
+    plt.rcParams.update({'font.size': 50})
 
+    if loss != "False":
+        plt.figure(figsize=(40,40), dpi=100)
+        T=len(rt)
+        ax1=plt.subplot2grid((2,2),(0,0))
+        ax2=plt.subplot2grid((2,2),(1,0))
+        ax3=plt.subplot2grid((2,2),(0,1))
+        ax4=plt.subplot2grid((2,2),(1,1))
 
-    ax1.plot(np.arange(1,T+1),rt, color="red", linewidth=15, alpha=0.8, label=r'$R_t$')
-    ax1.plot(optimal*np.ones(T), color="black",  linewidth=15,alpha=0.5, label="optimal")
-    ax2.plot(np.arange(1,T+1),pt, color="red", linewidth=15, alpha=0.8, label=r'$P_t$')
-    ax2.plot(optimal*np.ones(T), color="black",  linewidth=15,alpha=0.5, label="optimal")
-    ax3.scatter(betas, preds, color="red", s=250, label="predictions", alpha=0.6)
-    ax3.scatter(betas, ps(betas), color="blue", s=250, label="true values", alpha=0.6)
+        ax1.plot(np.log10(np.arange(1,T+1)),rt, color="red", linewidth=15, alpha=0.8, label=r'$R_t$')
+        ax1.plot(np.log10(np.arange(1,T+1)),optimal*np.ones(T), color="black",  linewidth=15,alpha=0.5, label="optimal")
+        ax2.plot(np.log10(np.arange(1,T+1)),pt, color="red", linewidth=15, alpha=0.8, label=r'$P_t$')
+        ax2.plot(np.log10(np.arange(1,T+1)),optimal*np.ones(T), color="black",  linewidth=15,alpha=0.5, label="optimal")
+        ax3.scatter(betas, preds, color="red", s=250, label="predictions", alpha=0.6)
+        ax3.scatter(betas, ps(betas), color="blue", s=250, label="true values", alpha=0.6)
+        ax4.plot(loss, color="black",  linewidth=15,alpha=0.5, label="Loss evolution")
 
-    for ax in [ax1, ax2, ax3]:
-        ax.legend(prop={"size":30})
-    plt.savefig(run_id+"/learning_curves.png")
-    plt.close()
-    return
+        for ax in [ax1, ax2, ax3,ax4]:
+            ax.legend(prop={"size":30})
+        plt.savefig(run_id+"/learning_curves.png")
+        plt.close()
+
+        if history_betas!=False:
+            optimal_beta = betas[np.where(ps(betas) == max(ps(betas)))[0][0]]
+            plt.figure(figsize=(40,40), dpi=100)
+
+            plt.hist(history_betas,density=True, facecolor='r', alpha=0.75, edgecolor='blue')
+            plt.text(optimal_beta, 0, "*", size=50)
+            plt.savefig(run_id+"/histograma_betas.png")
+            plt.close()
+        return
+    else:
+        plt.figure(figsize=(30,15))
+        T=len(rt)
+        ax1=plt.subplot2grid((2,2),(0,0))
+        ax2=plt.subplot2grid((2,2),(1,0))
+        ax3=plt.subplot2grid((2,2),(0,1), rowspan=2)
+        ax1.plot(np.arange(1,T+1),rt, color="red", linewidth=15, alpha=0.8, label=r'$R_t$')
+        ax1.plot(optimal*np.ones(T), color="black",  linewidth=15,alpha=0.5, label="optimal")
+        ax2.plot(np.arange(1,T+1),pt, color="red", linewidth=15, alpha=0.8, label=r'$P_t$')
+        ax2.plot(optimal*np.ones(T), color="black",  linewidth=15,alpha=0.5, label="optimal")
+        ax3.scatter(betas, preds, color="red", s=250, label="predictions", alpha=0.6)
+        ax3.scatter(betas, ps(betas), color="blue", s=250, label="true values", alpha=0.6)
+
+        for ax in [ax1, ax2, ax3]:
+            ax.legend(prop={"size":30})
+        plt.savefig(run_id+"/learning_curves.png")
+        plt.close()
+        return

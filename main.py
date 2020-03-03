@@ -12,14 +12,15 @@ import random
 
 
 def real_training(run_id, number_betas=10, lr = 10**-2,
- states_wasted=10**3, min_ep=1, batch_size=10, epochs=10, buffer_size=10**3):
+ states_wasted=10**3, min_ep=1, splits=10, epochs=10, buffer_size=10**3):
 
     q1=Q1()
     optimizer = tf.keras.optimizers.Adam(lr = lr)
     pt=[]
     rt=[]
     rts = []
-
+    loss_ev = []
+    history = []
     betas = np.arange(-1,0,1/number_betas)
     ntable=np.zeros(len(betas))
 
@@ -28,35 +29,34 @@ def real_training(run_id, number_betas=10, lr = 10**-2,
     for episode in tqdm(range(states_wasted)):
         ep = max(np.exp(-episode/100),min_ep)
         label, beta = greedy_action(q1, betas, ep)
+        history.append(beta)
         ntable[label]+=1
         reward = np.random.choice([1.,0.],1, p=[ps(beta), 1-ps(beta)])[0]
         rt.append(reward)
         rts.append(np.sum(rt))
         buffer.add(beta, reward)
 
-        if (episode > batch_size):
-            for k in range(epochs): #loop epoch
-                actions_did, rewards = buffer.sample(batch_size)
-                with tf.device("/cpu:0"):
-                    with tf.GradientTape() as tape:
-                        tape.watch(q1.trainable_variables)
-                        predictions = q1(np.expand_dims(np.array(actions_did),axis=1))
-                        loss_sum = tf.keras.losses.MSE(predictions,np.expand_dims(np.array(rewards),axis=1))
-                        loss = tf.reduce_mean(loss_sum)
-                        grads = tape.gradient(loss, q1.trainable_variables)
-                        optimizer.apply_gradients(zip(grads, q1.trainable_variables))
-                        pt.append(ps(greedy_action(q1,betas,ep=0)[1]))
+        actions_did, rewards = buffer.sample(int(10*buffer_size/splits))
+        # if episode%10==0:
 
-        else:
-            pt.append(0.5)
-
+        with tf.device("/cpu:0"):
+            with tf.GradientTape() as tape:
+                tape.watch(q1.trainable_variables)
+                predictions = q1(np.expand_dims(np.array(actions_did),axis=1))
+                loss_sum = tf.keras.losses.MSE(predictions,np.expand_dims(np.array(rewards),axis=1))
+                loss = tf.reduce_mean(loss_sum)
+                loss_ev.append(np.squeeze(loss.numpy()))
+                grads = tape.gradient(loss, q1.trainable_variables)
+                optimizer.apply_gradients(zip(grads, q1.trainable_variables))
+                pt.append(ps(greedy_action(q1,betas,ep=0)[1]))
+        # else:
+        #     pt.append(0)
+        #     loss_ev.append(0)
 
     rtsum = rts/np.arange(1,states_wasted+1)
     predictions = q1.prediction(betas)
-    plot_evolution(rt=rtsum, pt=pt, optimal=optimal, betas=betas, preds=predictions , run_id= run_id)
-
-    data = "betas: " +str(betas)+"\nBernoulli rewards!\nOptimizer: "+optimizer.__str__()+"\nBatch_size: "+str(batch_size)
-    data = data + "\nLearning rate: "+str(lr)+"\nEpsilon decaying! e^{-t/100}" + "\nBuffer size: "+str(buffer.buffer_size)+"\nMin_ep: "+str(min_ep)+"\nEpochs: "+str(epochs)
+    plot_evolution(rt=rtsum, pt=pt, optimal=optimal, betas=betas, preds=predictions , loss=loss_ev, history_betas=history, run_id= run_id)
+    data = "buffer_size: {}\nSplits: {}\nNumber of betas: {}\nLearning_rate: {}\nOptimizer: {}".format(str(buffer_size), str(splits), str(len(betas)) + "- all: "+ str(betas), str(lr),optimizer.__str__()  )
 
     os.chdir(run_id)
     with open("info.txt", 'w') as f:
@@ -77,19 +77,8 @@ number_run = "run_"+str(run_id)
 # run_id, number_betas=10, lr = 10**-2,
 #  states_wasted=10**4, min_ep=1, batch_size=10, epochs=10):
 
-real_training(run_id=number_run, lr=10**-2,
- states_wasted=10**4, min_ep=1, batch_size=5, epochs=1, buffer_size=5)
-
-
-
-
-
-
-
-
-
-
-
+real_training(run_id=number_run, lr=0.01, number_betas=10,
+ states_wasted=10**4, min_ep=1, splits=10, buffer_size=10**6)
 
 
 
