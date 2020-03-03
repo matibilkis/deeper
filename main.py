@@ -13,8 +13,19 @@ from tqdm import tqdm
 tf.keras.backend.set_floatx('float64')
 
 
-# In[169]:
-
+def Prob(alpha, beta, n1):
+    p0 = np.exp(-(alpha-beta)**2)
+    if n1 == 0:
+        return p0
+    else:
+        return 1-p0
+def ps(beta):
+    #dolinar guessing rule (= max-likelihood for L=1, careful sign of \beta)
+    alpha = 0.4
+    p=0
+    for n1 in [0,1]:
+       p+=Prob((-1)**(n1+1)*alpha, beta, n1)
+    return p/2
 
 class Q1(tf.keras.Model):
     def __init__(self):
