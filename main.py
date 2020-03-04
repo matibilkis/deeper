@@ -87,13 +87,26 @@ def real_training(run_id, lr = 10**-2,
     return
 
 
-check_folder("results")
-for k in range(1):
-    run_id=record()
-    number_run = "run_"+str(run_id)
-    real_training(run_id=number_run, lr=1e-4,
-     states_wasted=10**4, batch_size=128, buffer_size=10**3)
-os.chdir("..")
+check_folder("results_golem")
+
+for batch_size in [128, 264, 1000]:
+    check_folder("batch_sizes"+str(batch_size))
+    for k in range(2):
+        run_id=record()
+        number_run = "run_"+str(run_id)
+        real_training(run_id=number_run, lr=1e-4,
+         states_wasted=10**6, batch_size=batch_size, buffer_size=10**3)
+    os.chdir("..")
+
+for lrs in [1e-3, 1e-2, 1e-4]:
+    check_folder("lrs"+str(batch_size))
+    for k in range(2):
+        run_id=record()
+        number_run = "run_"+str(run_id)
+        real_training(run_id=number_run, lr=lrs,
+         states_wasted=10**6, batch_size=500, buffer_size=10**3)
+    os.chdir("..")
+
 
 
 ####
