@@ -7,33 +7,33 @@ import random
 
 
 
-def make_figure(run_id,lr, Nbatch, loss_train, loss_test, predictions,
- epochs, betas_train, shuffle="False"):
-    name_title = "Learning rate: "+ str(lr)+ "\nNumber of batches: "+str(Nbatch)
-    name="lr"+str(lr)+"_"+"nb"+str(Nbatch)
-    if shuffle == "True":
-        name = name+"_shuffled"
-    plt.figure(figsize=(10,10))
-    ax1=plt.subplot2grid((2,1),(0,0))
-    ax2=plt.subplot2grid((2,1),(1,0))
-    plt.subplots_adjust(hspace=0.5)
-    plt.title(name_title)
-    ax1.plot(np.log10(range(1,epochs+1)), loss_train, color="red", label="Training loss", alpha=0.7)
-    ax1.plot(np.log10(range(1,epochs+1)), loss_test, color="blue", label="Testing loss", alpha=0.7)
-    ax1.set_xlabel("epoch",size=25)
-    ax1.legend()
-
-    ax2.scatter(betas_test, predictions, s=20, color="red",label="Predictions",alpha=0.7)
-    ax2.plot(betas_test, ps(betas_test), '--',color="blue",label="Testing range" ,alpha=0.7)
-    ax2.scatter(betas_train, ps(betas_train), color="green", label="Training set",alpha=0.7 )
-
-    ax2.set_xlabel(r'$\beta$',size=25)
-    ax1.set_title("Loss evolution",size=25)
-    ax2.set_title("Success probability: prediction vs. true", size=25)
-    ax2.legend()
-    plt.savefig(run_id+"/"+str(name)+".png")
-    plt.close()
-    return
+# def make_figure(run_id,lr, Nbatch, loss_train, loss_test, predictions,
+#  epochs, betas_train, shuffle="False"):
+#     name_title = "Learning rate: "+ str(lr)+ "\nNumber of batches: "+str(Nbatch)
+#     name="lr"+str(lr)+"_"+"nb"+str(Nbatch)
+#     if shuffle == "True":
+#         name = name+"_shuffled"
+#     plt.figure(figsize=(10,10))
+#     ax1=plt.subplot2grid((2,1),(0,0))
+#     ax2=plt.subplot2grid((2,1),(1,0))
+#     plt.subplots_adjust(hspace=0.5)
+#     plt.title(name_title)
+#     ax1.plot(np.log10(range(1,epochs+1)), loss_train, color="red", label="Training loss", alpha=0.7)
+#     ax1.plot(np.log10(range(1,epochs+1)), loss_test, color="blue", label="Testing loss", alpha=0.7)
+#     ax1.set_xlabel("epoch",size=25)
+#     ax1.legend()
+#
+#     ax2.scatter(betas_test, predictions, s=20, color="red",label="Predictions",alpha=0.7)
+#     ax2.plot(betas_test, ps(betas_test), '--',color="blue",label="Testing range" ,alpha=0.7)
+#     ax2.scatter(betas_train, ps(betas_train), color="green", label="Training set",alpha=0.7 )
+#
+#     ax2.set_xlabel(r'$\beta$',size=25)
+#     ax1.set_title("Loss evolution",size=25)
+#     ax2.set_title("Success probability: prediction vs. true", size=25)
+#     ax2.legend()
+#     plt.savefig(run_id+"/"+str(name)+".png")
+#     plt.close()
+#     return
 
 def record():
     if not os.path.exists("number_rune.txt"):
@@ -115,6 +115,10 @@ def ps(beta):
     return p/2
 
 
+def check_folder(name):
+    if not os.path.exists(name):
+        os.makedirs(name)
+    os.chdir(name)
 
 
 

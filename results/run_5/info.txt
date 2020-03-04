@@ -1,0 +1,5 @@
+buffer_size: 1000000
+Splits: 5
+Number of betas: 5- all: [-2.  -1.  -0.7 -0.5  0. ]
+Learning_rate: 0.01
+Optimizer: <tensorflow.python.keras.optimizer_v2.adam.Adam object at 0x7faf0fc7b240>
