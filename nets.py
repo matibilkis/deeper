@@ -17,36 +17,6 @@ class Q1(tf.keras.Model):
         self.l5 = Dense(1, kernel_regularizer=tf.keras.regularizers.l1(0.01),
     activity_regularizer=tf.keras.regularizers.l2(0.01))
 
-######## REWARD_MATTERS ARCHITECTURE ####
-######## REWARD_MATTERS ARCHITECTURE ####
-######## REWARD_MATTERS ARCHITECTURE ####
-
-    #     self.l1 = Dense(10, input_shape=(1,),kernel_regularizer=tf.keras.regularizers.l1(0.01),
-    # activity_regularizer=tf.keras.regularizers.l2(0.01))
-    #     self.l2 = Dense(33, kernel_regularizer=tf.keras.regularizers.l1(0.01),
-    # activity_regularizer=tf.keras.regularizers.l2(0.01))
-    #     self.l3 = Dense(10, kernel_regularizer=tf.keras.regularizers.l1(0.01),
-    # activity_regularizer=tf.keras.regularizers.l2(0.01))
-    #     self.l4 = Dense(33, kernel_regularizer=tf.keras.regularizers.l1(0.01),
-    # activity_regularizer=tf.keras.regularizers.l2(0.01))
-    #     self.l5 = Dense(1, kernel_regularizer=tf.keras.regularizers.l1(0.01),
-    # activity_regularizer=tf.keras.regularizers.l2(0.01))
-
-    ######## REWARD_MATTERS ARCHITECTURE ####
-    ######## REWARD_MATTERS ARCHITECTURE ####
-    ######## REWARD_MATTERS ARCHITECTURE ####
-
-    #     self.l1 = Dense(10, input_shape=(1,), kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None), bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None), kernel_regularizer=tf.keras.regularizers.l1(0.05),
-    # activity_regularizer=tf.keras.regularizers.l1(0.05))
-    #     self.l2 = Dense(33, kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None), bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None),kernel_regularizer=tf.keras.regularizers.l1(0.05),
-    # activity_regularizer=tf.keras.regularizers.l1(0.05))
-    #     self.l3 = Dense(10, kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None), bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None), kernel_regularizer=tf.keras.regularizers.l1(0.05),
-    # activity_regularizer=tf.keras.regularizers.l1(0.05))
-    #     self.l4 = Dense(33, kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None), bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None),kernel_regularizer=tf.keras.regularizers.l1(0.05),
-    # activity_regularizer=tf.keras.regularizers.l1(0.05))
-    #     self.l5 = Dense(1, kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None), bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None),kernel_regularizer=tf.keras.regularizers.l1(0.05),
-    # activity_regularizer=tf.keras.regularizers.l1(0.05))
-
     def call(self, input):
         feat = tf.nn.relu(self.l1(input))
         feat = tf.nn.dropout(feat,rate=0.1)
@@ -54,30 +24,49 @@ class Q1(tf.keras.Model):
         feat = tf.nn.dropout(feat, rate=0.1)
         feat = tf.nn.relu(self.l3(feat))
         feat = tf.nn.dropout(feat, rate=0.1)
-        # feat = tf.nn.relu(self.l3(feat))
-        # feat = tf.nn.relu(self.l4(feat))
         value = tf.nn.tanh(self.l5(feat))
+        return value
+
+    def predict(self, betas):
+        inp = np.expand_dims(betas, axis=1)
+        return np.squeeze(self(inp).numpy())
+
+
+class Actor(tf.keras.Model):
+    def __init__(self):
+        super(Actor,self).__init__()
+
+        self.l1 = Dense(1, input_shape=(1,),
+                        kernel_regularizer=tf.keras.regularizers.l1(0.01),
+                        activity_regularizer=tf.keras.regularizers.l2(0.01),
+                       bias_initializer=tf.random_uniform_initializer())
+        self.l2 = Dense(10,
+                         kernel_regularizer=tf.keras.regularizers.l1(0.01),
+                        activity_regularizer=tf.keras.regularizers.l2(0.01),
+                       bias_initializer=tf.random_uniform_initializer())
+        self.l3 = Dense(33,
+                    kernel_regularizer=tf.keras.regularizers.l1(0.01),
+                    activity_regularizer=tf.keras.regularizers.l2(0.01),
+                    bias_initializer=tf.random_uniform_initializer())
+        self.l5 = Dense(1,
+                         kernel_regularizer=tf.keras.regularizers.l1(0.01),
+                        activity_regularizer=tf.keras.regularizers.l2(0.01),
+                       bias_initializer=tf.random_uniform_initializer())
+    def call(self, input):
+        feat = tf.nn.relu(self.l1(input))
+        feat = tf.nn.dropout(feat,rate=0.1)
+        feat = tf.nn.relu(self.l2(feat))
+        feat = tf.nn.dropout(feat, rate=0.1)
+        feat = tf.nn.relu(self.l3(feat))
+        feat = tf.nn.dropout(feat, rate=0.1)
+
+        value = tf.clip_by_value(tf.multiply(10,tf.nn.tanh(self.l5(feat))),clip_value_min=-2, clip_value_max=2)
         return value
 
     def prediction(self, betas):
         inp = np.expand_dims(betas, axis=1)
         return np.squeeze(self(inp).numpy())
-#
-# def train_net(episode,  pt, network,optimizer, buffer,epochs=10, batch_size=10):
-#     pt = pt.copy()
-#     if (episode > batch_size):
-#         for k in range(epochs): #loop epoch
-#             actions_did, rewards = buffer.sample(batch_size)
-#             with tf.device("/cpu:0"):
-#                 with tf.GradientTape() as tape:
-#                     tape.watch(network.trainable_variables)
-#                     predictions = network(np.expand_dims(np.array(actions_did),axis=1))
-#                     loss_sum = tf.keras.losses.MSE(predictions,np.expand_dims(np.array(rewards),axis=1))
-#                     loss = tf.reduce_mean(loss_sum)
-#                     grads = tape.gradient(loss, network.trainable_variables)
-#                     optimizer.apply_gradients(zip(grads, network.trainable_variables))
-#                     pt.append(ps(greedy_action(network,betas,ep=0)[1]))
-#
-#     else:
-#         pt.append(0.5)
-#     return pt
+
+    def give_action(self):
+        dumb = np.array([0.])
+        return self(np.expand_dims(dumb,axis=1))

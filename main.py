@@ -7,90 +7,93 @@ from tqdm import tqdm
 tf.keras.backend.set_floatx('float64')
 from misc import *
 from collections import deque
-from nets import Q1
+from nets import Q1, Actor
 import random
 
 
-def real_training(run_id, number_betas=10, lr = 10**-2,
- states_wasted=10**3, min_ep=1, splits=10, epochs=10, buffer_size=10**3):
+def real_training(run_id, lr = 10**-2,
+ states_wasted=10**3, batch_size=64, epochs=10, buffer_size=10**3):
 
     q1=Q1()
-    optimizer = tf.keras.optimizers.Adam(lr = lr)
+    actor = Actor()
+
+    optimizer_critic = tf.keras.optimizers.Adam(lr = lr)
+    optimizer_actor = tf.keras.optimizers.Adam(lr = lr)
+
     pt=[]
     rt=[]
     rts = []
     loss_ev = []
     history = []
-    # betas = np.arange(-1,0,1/number_betas)
-    betas = np.array([-2, -1, -.7, -.5 , 0])
-    ntable=np.zeros(len(betas))
+    history_would_have_done=[]
 
-    optimal = max(ps(betas))
+    betas_test = np.arange(-3,3,.01)
+    optimal = max(ps(betas_test))
     buffer = ReplayBuffer(buffer_size=buffer_size)
+
     for episode in tqdm(range(states_wasted)):
-        ep = max(np.exp(-episode/100),min_ep)
-        label, beta = greedy_action(q1, betas, ep)
+
+        beta_would_do = np.squeeze(actor.give_action().numpy())
+        beta = beta_would_do + np.random.uniform(-.25, .25)
         history.append(beta)
-        ntable[label]+=1
+        history_would_have_done.append(beta_would_do)
         reward = np.random.choice([1.,0.],1, p=[ps(beta), 1-ps(beta)])[0]
         rt.append(reward)
         rts.append(np.sum(rt))
         buffer.add(beta, reward)
 
-        # if episode%10**2 == 1:
+        actions_did, rewards = buffer.sample(batch_size)
 
-        actions_did, rewards = buffer.sample(int(buffer.count/splits)+1)
-        # if episode%10==0:
+        if episode >0:
+            with tf.GradientTape() as tape:
+                tape.watch(q1.trainable_variables)
+                predictions = q1(np.expand_dims(np.array(actions_did),axis=1))
+                loss_sum = tf.keras.losses.MSE(predictions,np.expand_dims(np.array(rewards),axis=1))
+                loss = tf.reduce_mean(loss_sum)
+                grads = tape.gradient(loss, q1.trainable_variables)
+                optimizer_critic.apply_gradients(zip(grads, q1.trainable_variables))
+                loss_ev.append(np.squeeze(loss.numpy()))
+                pt.append(ps(greedy_action(q1,betas_test,ep=0)[1]))
 
-        if episode > 10**2:
-            with tf.device("/cpu:0"):
-                with tf.GradientTape() as tape:
-                    tape.watch(q1.trainable_variables)
-                    predictions = q1(np.expand_dims(np.array(actions_did),axis=1))
-                    loss_sum = tf.keras.losses.MSE(predictions,np.expand_dims(np.array(rewards),axis=1))
-                    loss = tf.reduce_mean(loss_sum)
-                    loss_ev.append(np.squeeze(loss.numpy()))
-                    grads = tape.gradient(loss, q1.trainable_variables)
-                    optimizer.apply_gradients(zip(grads, q1.trainable_variables))
-                    pt.append(ps(greedy_action(q1,betas,ep=0)[1]))
+            with tf.GradientTape() as tape:
+                actions = actor(np.expand_dims(np.zeros(10),axis=1))
+                tape.watch(actions)
+                qvals = q1(actions)
+            dq_da = tape.gradient(qvals, actions)
+
+            with tf.GradientTape() as tape:
+                actions = actor(np.expand_dims(np.zeros(10),axis=1))
+                theta = actor.trainable_variables
+            da_dtheta = tape.gradient(actions, theta, output_gradients=-dq_da)
+            optimizer_actor.apply_gradients(zip(da_dtheta, actor.trainable_variables))
+
         else:
             pt.append(0.5)
             loss_ev.append(0)
 
     rtsum = rts/np.arange(1,len(rts)+1)
-    predictions = q1.prediction(betas)
-    plot_evolution(rt=rtsum, pt=pt, optimal=optimal, betas=betas, preds=predictions , loss=loss_ev, history_betas=history, run_id= run_id)
-    data = "buffer_size: {}\nSplits: {}\nNumber of betas: {}\nLearning_rate: {}\nOptimizer: {}".format(str(buffer_size), str(splits), str(len(betas)) + "- all: "+ str(betas), str(lr),optimizer.__str__()  )
+    predictions = q1(np.expand_dims(np.array(betas_test),axis=1))
+
+    plot_evolution(rt=rtsum, pt=pt, optimal=optimal, betas=betas_test,
+     preds=predictions , loss=loss_ev, history_betas=history, history_would_have_done=history_would_have_done,
+      run_id= run_id)
+    data = "buffer_size: {}\Batch size: {}\nLearning_rate: {}\nOptimizer Critic: {}\nOptimizer Actor: {}".format(str(buffer_size), str(batch_size), str(lr),optimizer_critic.__str__(),optimizer_actor.__str__()  )
 
     os.chdir(run_id)
     with open("info.txt", 'w') as f:
         f.write(data)
         f.close()
-
     os.chdir("..")
     return
-#
-# for i in range(5):
-#     if not os.path.exists("1-gredy"):
-#         os.makedirs("1-greedy")
-#     os.chdir("1-greedy")
-#
-#     run_id=record()
-#     number_run = "run_"+str(run_id)
-#
-#     real_training(run_id=number_run, lr=0.01, number_betas=5,
-#      states_wasted=2*10**3, min_ep=1, splits=100, buffer_size=10**6)
 
-for splits in [10]:
-    check_folder("results")
 
-    for k in range(1):
-        run_id=record()
-        number_run = "run_"+str(run_id)
-
-        real_training(run_id=number_run, lr=1e-2, number_betas=5,
-         states_wasted=2*10**3, min_ep=.01, splits=5, buffer_size=10**6)
-    os.chdir("..")
+check_folder("results")
+for k in range(1):
+    run_id=record()
+    number_run = "run_"+str(run_id)
+    real_training(run_id=number_run, lr=1e-4,
+     states_wasted=10**4, batch_size=128, buffer_size=10**3)
+os.chdir("..")
 
 
 ####

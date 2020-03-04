@@ -1,9 +1,0 @@
-What works is to take 2* 10**4 dataset
-it's 20 betas
-1000 rewards each
-
-and I split the dataset in 5 --> 4000
-and feed it 100 times, so it's I feed 4000 (rew, beta) 500 times
-
-##
-in total it's 2*5*10**(4+2) = 10**7 single-feeds

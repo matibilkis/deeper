@@ -111,7 +111,7 @@ def ps(beta):
     alpha = 0.4
     p=0
     for n1 in [0,1]:
-       p+=Prob((-1)**(n1+1)*alpha, beta, n1)
+       p+=Prob(np.sign(beta)*(-1)**(n1)*alpha, beta, n1)
     return p/2
 
 
@@ -173,7 +173,8 @@ class ReplayBuffer:
         self.count = 0
 
 
-def plot_evolution(rt, pt, optimal, betas, preds, loss=False, history_betas=False,run_id="algo"):
+def plot_evolution(rt, pt, optimal, betas, preds, loss=False,
+history_betas=False, history_would_have_done=False,run_id="algo"):
     matplotlib.rc('font', serif='cm10')
     plt.rcParams.update({'font.size': 50})
 
@@ -202,7 +203,9 @@ def plot_evolution(rt, pt, optimal, betas, preds, loss=False, history_betas=Fals
             optimal_beta = betas[np.where(ps(betas) == max(ps(betas)))[0][0]]
             plt.figure(figsize=(40,40), dpi=100)
 
-            plt.hist(history_betas,density=True, facecolor='r', alpha=0.75, edgecolor='blue')
+            plt.hist(history_betas,density=True, facecolor='r', alpha=0.6, edgecolor='blue', label="done")
+            plt.hist(history_would_have_done,density=True, facecolor='g', alpha=0.4, edgecolor='black', label="would have done")
+            plt.legend()
             plt.text(optimal_beta, 0, "*", size=50)
             plt.savefig(run_id+"/histograma_betas.png")
             plt.close()
