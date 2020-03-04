@@ -8,22 +8,48 @@ class Q1(tf.keras.Model):
     def __init__(self):
         super(Q1,self).__init__()
 
-        self.l1 = Dense(10, input_shape=(1,), kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None), bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None), kernel_regularizer=tf.keras.regularizers.l1(0.05),
-    activity_regularizer=tf.keras.regularizers.l1(0.05))
-        self.l2 = Dense(33, kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None), bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None),kernel_regularizer=tf.keras.regularizers.l1(0.05),
-    activity_regularizer=tf.keras.regularizers.l1(0.05))
-        self.l3 = Dense(10, kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None), bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None), kernel_regularizer=tf.keras.regularizers.l1(0.05),
-    activity_regularizer=tf.keras.regularizers.l1(0.05))
-        self.l4 = Dense(33, kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None), bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None),kernel_regularizer=tf.keras.regularizers.l1(0.05),
-    activity_regularizer=tf.keras.regularizers.l1(0.05))
-        self.l5 = Dense(1, kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None), bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None),kernel_regularizer=tf.keras.regularizers.l1(0.05),
-    activity_regularizer=tf.keras.regularizers.l1(0.05))
+        self.l1 = Dense(100, input_shape=(1,),kernel_regularizer=tf.keras.regularizers.l1(0.01),
+    activity_regularizer=tf.keras.regularizers.l2(0.01))
+        self.l2 = Dense(330, kernel_regularizer=tf.keras.regularizers.l1(0.01),
+    activity_regularizer=tf.keras.regularizers.l2(0.01))
+        self.l5 = Dense(1, kernel_regularizer=tf.keras.regularizers.l1(0.01),
+    activity_regularizer=tf.keras.regularizers.l2(0.01))
+
+######## REWARD_MATTERS ARCHITECTURE ####
+######## REWARD_MATTERS ARCHITECTURE ####
+######## REWARD_MATTERS ARCHITECTURE ####
+
+    #     self.l1 = Dense(10, input_shape=(1,),kernel_regularizer=tf.keras.regularizers.l1(0.01),
+    # activity_regularizer=tf.keras.regularizers.l2(0.01))
+    #     self.l2 = Dense(33, kernel_regularizer=tf.keras.regularizers.l1(0.01),
+    # activity_regularizer=tf.keras.regularizers.l2(0.01))
+    #     self.l3 = Dense(10, kernel_regularizer=tf.keras.regularizers.l1(0.01),
+    # activity_regularizer=tf.keras.regularizers.l2(0.01))
+    #     self.l4 = Dense(33, kernel_regularizer=tf.keras.regularizers.l1(0.01),
+    # activity_regularizer=tf.keras.regularizers.l2(0.01))
+    #     self.l5 = Dense(1, kernel_regularizer=tf.keras.regularizers.l1(0.01),
+    # activity_regularizer=tf.keras.regularizers.l2(0.01))
+
+    ######## REWARD_MATTERS ARCHITECTURE ####
+    ######## REWARD_MATTERS ARCHITECTURE ####
+    ######## REWARD_MATTERS ARCHITECTURE ####
+
+    #     self.l1 = Dense(10, input_shape=(1,), kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None), bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None), kernel_regularizer=tf.keras.regularizers.l1(0.05),
+    # activity_regularizer=tf.keras.regularizers.l1(0.05))
+    #     self.l2 = Dense(33, kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None), bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None),kernel_regularizer=tf.keras.regularizers.l1(0.05),
+    # activity_regularizer=tf.keras.regularizers.l1(0.05))
+    #     self.l3 = Dense(10, kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None), bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None), kernel_regularizer=tf.keras.regularizers.l1(0.05),
+    # activity_regularizer=tf.keras.regularizers.l1(0.05))
+    #     self.l4 = Dense(33, kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None), bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None),kernel_regularizer=tf.keras.regularizers.l1(0.05),
+    # activity_regularizer=tf.keras.regularizers.l1(0.05))
+    #     self.l5 = Dense(1, kernel_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None), bias_initializer=tf.keras.initializers.RandomNormal(mean=0.0, stddev=.01, seed=None),kernel_regularizer=tf.keras.regularizers.l1(0.05),
+    # activity_regularizer=tf.keras.regularizers.l1(0.05))
 
     def call(self, input):
         feat = tf.nn.relu(self.l1(input))
         feat = tf.nn.relu(self.l2(feat))
-        feat = tf.nn.relu(self.l3(feat))
-        feat = tf.nn.relu(self.l4(feat))
+        # feat = tf.nn.relu(self.l3(feat))
+        # feat = tf.nn.relu(self.l4(feat))
         value = tf.nn.tanh(self.l5(feat))
         return value
 

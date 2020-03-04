@@ -78,7 +78,7 @@ number_run = "run_"+str(run_id)
 #  states_wasted=10**4, min_ep=1, batch_size=10, epochs=10):
 
 real_training(run_id=number_run, lr=0.01, number_betas=10,
- states_wasted=10**4, min_ep=1, splits=10, buffer_size=10**6)
+ states_wasted=10**4, min_ep=1, splits=100, buffer_size=10**6)
 
 
 
