@@ -1,4 +1,0 @@
-buffer_size: 2000\Batch size: 500
-Learning_rate: 0.0001
-Optimizer Critic: <tensorflow.python.keras.optimizer_v2.adam.Adam object at 0x7efe48748668>
-Optimizer Actor: <tensorflow.python.keras.optimizer_v2.adam.Adam object at 0x7efe487486a0>
