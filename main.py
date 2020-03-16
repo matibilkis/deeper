@@ -95,7 +95,7 @@ for k in range(1):
     run_id=record()
     number_run = "run_"+str(run_id)
     real_training(run_id=number_run, lr=1e-4,
-     states_wasted=10**2, batch_size=500, buffer_size=2*10**3)
+     states_wasted=10**4, batch_size=500, buffer_size=2*10**3)
 os.chdir("..")
 
 # for lrs in [1e-3, 1e-2, 1e-4]:

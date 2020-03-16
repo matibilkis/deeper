@@ -207,7 +207,9 @@ history_betas=False, history_would_have_done=False,run_id="algo"):
             plt.hist(history_betas,bins=100, facecolor='r', alpha=0.6, edgecolor='blue', label="done")
             plt.hist(history_would_have_done,bins=100, facecolor='g', alpha=0.4, edgecolor='black', label="would have done")
             plt.legend()
-            plt.text(optimal_beta, 0, "*", size=50)
+            plt.text(optimal_beta, 0, "*", size=350)
+            plt.text(-optimal_beta, 0, "*", size=350)
+
             plt.savefig(run_id+"/histograma_betas.png")
             plt.close()
         return
