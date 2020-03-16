@@ -60,7 +60,8 @@ class Actor(tf.keras.Model):
         feat = tf.nn.relu(self.l3(feat))
         feat = tf.nn.dropout(feat, rate=0.1)
 
-        value = tf.clip_by_value(tf.multiply(10,tf.nn.tanh(self.l5(feat))),clip_value_min=-2, clip_value_max=2)
+        # value = tf.clip_by_value(tf.multiply(10,tf.nn.tanh(self.l5(feat))),clip_value_min=-2, clip_value_max=2)
+        value = -tf.nn.sigmoid(self.l5(feat))
         return value
 
     def prediction(self, betas):

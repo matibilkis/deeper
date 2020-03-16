@@ -12,7 +12,7 @@ import random
 
 
 def real_training(run_id, lr = 10**-2,
- states_wasted=10**3, batch_size=64, epochs=10, buffer_size=10**3):
+ states_wasted=10**3, batch_size=64, epochs=10, buffer_size=10**3, predict_q_table=True):
 
     q1=Q1()
     actor = Actor()
@@ -27,13 +27,14 @@ def real_training(run_id, lr = 10**-2,
     history = []
     history_would_have_done=[]
 
-    betas_test = np.arange(-3,3,.01)
+    betas_test = np.arange(-1,1,.01)
     optimal = max(ps(betas_test))
     buffer = ReplayBuffer(buffer_size=buffer_size)
 
     for episode in tqdm(range(states_wasted)):
 
         beta_would_do = np.squeeze(actor.give_action().numpy())
+        pt.append(ps(beta_would_do))
         beta = beta_would_do + np.random.uniform(-.25, .25)
         history.append(beta)
         history_would_have_done.append(beta_would_do)
@@ -53,30 +54,31 @@ def real_training(run_id, lr = 10**-2,
                 grads = tape.gradient(loss, q1.trainable_variables)
                 optimizer_critic.apply_gradients(zip(grads, q1.trainable_variables))
                 loss_ev.append(np.squeeze(loss.numpy()))
-                pt.append(ps(greedy_action(q1,betas_test,ep=0)[1]))
 
             with tf.GradientTape() as tape:
-                actions = actor(np.expand_dims(np.zeros(10),axis=1))
+                actions = actor(np.expand_dims(np.zeros(batch_size),axis=1))
                 tape.watch(actions)
                 qvals = q1(actions)
             dq_da = tape.gradient(qvals, actions)
 
             with tf.GradientTape() as tape:
-                actions = actor(np.expand_dims(np.zeros(10),axis=1))
+                actions = actor(np.expand_dims(np.zeros(batch_size),axis=1))
                 theta = actor.trainable_variables
             da_dtheta = tape.gradient(actions, theta, output_gradients=-dq_da)
             optimizer_actor.apply_gradients(zip(da_dtheta, actor.trainable_variables))
 
         else:
-            pt.append(0.5)
             loss_ev.append(0)
-
     rtsum = rts/np.arange(1,len(rts)+1)
-    predictions = q1(np.expand_dims(np.array(betas_test),axis=1))
+    if predict_q_table:
+        predictions = q1(np.expand_dims(np.array(betas_test),axis=1))
+    else:
+        predictions=None
 
     plot_evolution(rt=rtsum, pt=pt, optimal=optimal, betas=betas_test,
      preds=predictions , loss=loss_ev, history_betas=history, history_would_have_done=history_would_have_done,
       run_id= run_id)
+
     data = "buffer_size: {}\Batch size: {}\nLearning_rate: {}\nOptimizer Critic: {}\nOptimizer Actor: {}".format(str(buffer_size), str(batch_size), str(lr),optimizer_critic.__str__(),optimizer_actor.__str__()  )
 
     os.chdir(run_id)
@@ -87,25 +89,23 @@ def real_training(run_id, lr = 10**-2,
     return
 
 
-check_folder("results_golem")
+check_folder("mate")
 
-for batch_size in [128, 264, 1000]:
-    check_folder("batch_sizes"+str(batch_size))
-    for k in range(2):
-        run_id=record()
-        number_run = "run_"+str(run_id)
-        real_training(run_id=number_run, lr=1e-4,
-         states_wasted=10**6, batch_size=batch_size, buffer_size=10**3)
-    os.chdir("..")
+for k in range(1):
+    run_id=record()
+    number_run = "run_"+str(run_id)
+    real_training(run_id=number_run, lr=1e-4,
+     states_wasted=10**2, batch_size=500, buffer_size=2*10**3)
+os.chdir("..")
 
-for lrs in [1e-3, 1e-2, 1e-4]:
-    check_folder("lrs"+str(batch_size))
-    for k in range(2):
-        run_id=record()
-        number_run = "run_"+str(run_id)
-        real_training(run_id=number_run, lr=lrs,
-         states_wasted=10**6, batch_size=500, buffer_size=10**3)
-    os.chdir("..")
+# for lrs in [1e-3, 1e-2, 1e-4]:
+#     check_folder("lrs"+str(batch_size))
+#     for k in range(2):
+#         run_id=record()
+#         number_run = "run_"+str(run_id)
+#         real_training(run_id=number_run, lr=lrs,
+#          states_wasted=10**5, batch_size=500, buffer_size=10**3)
+#     os.chdir("..")
 
 
 

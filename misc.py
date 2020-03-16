@@ -173,7 +173,7 @@ class ReplayBuffer:
         self.count = 0
 
 
-def plot_evolution(rt, pt, optimal, betas, preds, loss=False,
+def plot_evolution(rt, pt, optimal, betas, preds=None, loss=False,
 history_betas=False, history_would_have_done=False,run_id="algo"):
     matplotlib.rc('font', serif='cm10')
     plt.rcParams.update({'font.size': 50})
@@ -190,7 +190,8 @@ history_betas=False, history_would_have_done=False,run_id="algo"):
         ax1.plot(np.log10(np.arange(1,T+1)),optimal*np.ones(T), color="black",  linewidth=15,alpha=0.5, label="optimal")
         ax2.plot(np.log10(np.arange(1,T+1)),pt, color="red", linewidth=15, alpha=0.8, label=r'$P_t$')
         ax2.plot(np.log10(np.arange(1,T+1)),optimal*np.ones(T), color="black",  linewidth=15,alpha=0.5, label="optimal")
-        ax3.scatter(betas, preds, color="red", s=250, label="predictions", alpha=0.6)
+        if preds!=None:
+            ax3.scatter(betas, preds, color="red", s=250, label="predictions", alpha=0.6)
         ax3.scatter(betas, ps(betas), color="blue", s=250, label="true values", alpha=0.6)
         ax4.plot(loss, color="black",  linewidth=15,alpha=0.5, label="Loss evolution")
 
@@ -203,8 +204,8 @@ history_betas=False, history_would_have_done=False,run_id="algo"):
             optimal_beta = betas[np.where(ps(betas) == max(ps(betas)))[0][0]]
             plt.figure(figsize=(40,40), dpi=100)
 
-            plt.hist(history_betas,density=True, facecolor='r', alpha=0.6, edgecolor='blue', label="done")
-            plt.hist(history_would_have_done,density=True, facecolor='g', alpha=0.4, edgecolor='black', label="would have done")
+            plt.hist(history_betas,bins=100, facecolor='r', alpha=0.6, edgecolor='blue', label="done")
+            plt.hist(history_would_have_done,bins=100, facecolor='g', alpha=0.4, edgecolor='black', label="would have done")
             plt.legend()
             plt.text(optimal_beta, 0, "*", size=50)
             plt.savefig(run_id+"/histograma_betas.png")
@@ -220,7 +221,8 @@ history_betas=False, history_would_have_done=False,run_id="algo"):
         ax1.plot(optimal*np.ones(T), color="black",  linewidth=15,alpha=0.5, label="optimal")
         ax2.plot(np.arange(1,T+1),pt, color="red", linewidth=15, alpha=0.8, label=r'$P_t$')
         ax2.plot(optimal*np.ones(T), color="black",  linewidth=15,alpha=0.5, label="optimal")
-        ax3.scatter(betas, preds, color="red", s=250, label="predictions", alpha=0.6)
+        if preds!=None:
+            ax3.scatter(betas, preds, color="red", s=250, label="predictions", alpha=0.6)
         ax3.scatter(betas, ps(betas), color="blue", s=250, label="true values", alpha=0.6)
 
         for ax in [ax1, ax2, ax3]:
