@@ -15,6 +15,7 @@ def real_training(run_id, lr = 10**-2,
  states_wasted=10**3, batch_size=64, epochs=10, buffer_size=10**3, predict_q_table=True):
 
     q1=Q1()
+    q2=Q2()
     actor = Actor()
 
     optimizer_critic = tf.keras.optimizers.Adam(lr = lr)
@@ -49,7 +50,7 @@ def real_training(run_id, lr = 10**-2,
             with tf.GradientTape() as tape:
                 tape.watch(q1.trainable_variables)
                 predictions = q1(np.expand_dims(np.array(actions_did),axis=1))
-                loss_sum = tf.keras.losses.MSE(predictions,np.expand_dims(np.array(rewards),axis=1))
+                loss_sum = tf.keras.losses.MSE(np.expand_dims(np.array(rewards),axis=1),predictions)
                 loss = tf.reduce_mean(loss_sum)
                 grads = tape.gradient(loss, q1.trainable_variables)
                 optimizer_critic.apply_gradients(zip(grads, q1.trainable_variables))
