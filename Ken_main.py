@@ -7,19 +7,6 @@ from tqdm import tqdm
 tf.keras.backend.set_floatx('float64')
 from misc import *
 from collections import deque
-from nets import Q1, Actor
-import random
-
-
-import tensorflow as tf
-from tensorflow.keras.layers import Dense
-import numpy as np
-import matplotlib.pyplot as plt
-import os
-from tqdm import tqdm
-tf.keras.backend.set_floatx('float64')
-from misc import *
-from collections import deque
 from nets import Q1, Actor, Q2
 import random
 
@@ -60,8 +47,11 @@ def real_training(run_id, lr = 10**-2,
         history_would_have_done.append(beta_would_do)
 
         outcome = give_outcome(phase*0.4, beta)
-        preds_guess = np.squeeze(q2( np.expand_dims(np.array([[beta, outcome]]) ,axis=1 )).numpy())
-        guess = [-1,1][np.argmax(preds_guess)]
+        if np.random.random()<0.1:
+            guess = np.random.choice([-1,1],1)[0]
+        else:
+            predictiones_guess = np.squeeze(q2( np.expand_dims(np.array([[beta, outcome]]) ,axis=1 )).numpy())
+            guess = [-1,1][np.argmax(predictiones_guess)]
 
         pt.append(ps(beta_would_do,g))
         if guess == phase:
@@ -147,18 +137,18 @@ check_folder("mate")
 
 run_id=record()
 number_run = "run_"+str(run_id)
-real_training(run_id=number_run, lr=1e-4,
- states_wasted=10**5, batch_size=1000, buffer_size=2*10**3)
+real_training(run_id=number_run, lr=1e-1,
+ states_wasted=10**3, batch_size=1000, buffer_size=2*10**3)
 
-
-
-run_id=record()
-number_run = "run_"+str(run_id)
-real_training(run_id=number_run, lr=1e-5,
- states_wasted=10**5, batch_size=1000, buffer_size=5*10**3)
-
-
-run_id=record()
-number_run = "run_"+str(run_id)
-real_training(run_id=number_run, lr=1e-5,
- states_wasted=3*10**5, batch_size=10**4, buffer_size=10**5)
+#
+#
+# run_id=record()
+# number_run = "run_"+str(run_id)
+# real_training(run_id=number_run, lr=1e-5,
+#  states_wasted=10**5, batch_size=1000, buffer_size=5*10**3)
+#
+#
+# run_id=record()
+# number_run = "run_"+str(run_id)
+# real_training(run_id=number_run, lr=1e-5,
+#  states_wasted=3*10**5, batch_size=10**4, buffer_size=10**5)

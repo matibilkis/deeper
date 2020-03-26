@@ -76,7 +76,7 @@ class Q2(tf.keras.Model):
         feat = tf.nn.relu(self.l2(feat))
         feat = tf.nn.dropout(feat, rate=0.1)
         feat = tf.nn.relu(self.l3(feat))
-        feat = tf.nn.dropout(feat, rate=0.1)
+        feat = tf.nn.dropout(feat, rate=0.01)
         value = tf.nn.sigmoid(self.l5(feat))
         return value
 
@@ -88,7 +88,7 @@ class Q2(tf.keras.Model):
         inp = np.expand_dims(np.array([[0.],[0.]]),axis=1)
         self(inp)
         return
-        
+
     def __str__(self):
         return self.name
 

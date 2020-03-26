@@ -1,0 +1,2 @@
+model_checkpoint_path: "actor_2"
+all_model_checkpoint_paths: "actor_2"
