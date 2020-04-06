@@ -1,0 +1,18 @@
+tau: 0.1, repetitions per optimization step (would be like epochs): 1
+ 
+**** optimizers ***
+optimizer_critic_guess: {'name': 'Adam', 'learning_rate': 0.001, 'decay': 0.0, 'beta_1': 0.9, 'beta_2': 0.999, 'epsilon': 1e-07, 'amsgrad': False} 
+Optimizer_actor_l0: {'name': 'Adam', 'learning_rate': 0.0001, 'decay': 0.0, 'beta_1': 0.9, 'beta_2': 0.999, 'epsilon': 1e-07, 'amsgrad': False}
+Optimizer_critic_l0: <tensorflow.python.keras.optimizer_v2.adam.Adam object at 0x7f94e0679ef0>
+
+
+
+*** BUFFER ***
+Buffer_size: 100000
+ Batch_size for sampling: 500
+
+
+
+ *** NOISE PARAMETERS *** 
+epsilon-guess: 0.01
+epsilon_displacement_noise: 0.1
