@@ -12,13 +12,15 @@ import random
 import matplotlib
 
 from plots import *
-from misc import Prob, ps_maxlik, qval
+from misc import Prob, ps_maxlik, qval, record
 from nets import *
 from buffer import ReplayBuffer
 
 
-def ddpgKennedy(name_run="",total_episodes = 10**3,buffer_size=500, batch_size=64, ep_guess=0.01,
- noise_displacement=0.5,lr_actor=0.01, lr_critic=0.001, tau=0.005, repetitions=1):
+def ddpgKennedy(special_name="",total_episodes = 10**3,buffer_size=500, batch_size=64, ep_guess=0.01,
+ noise_displacement=0.5,lr_actor=0.01, lr_critic=0.001, tau=0.005, repetitions=1, plots=True):
+    if not os.path.exists("results"):
+        os.makedirs("results")
 
     amplitude = 0.4
     buffer = ReplayBuffer(buffer_size=buffer_size)
@@ -48,10 +50,12 @@ def ddpgKennedy(name_run="",total_episodes = 10**3,buffer_size=500, batch_size=6
     test_loss_l1 = tf.keras.metrics.Mean('test_loss_l1', dtype=tf.float32)
 
 
-    if name_run == "":
-        current_run_and_time = "results/{}".format(datetime.now().strftime("%Y%m%d-%H%M"))
+    if special_name == "":
+        # current_run_and_time = "results/{}".format(datetime.now().strftime("%Y%m%d-%H%M"))
+        numb = record()
+        current_run_and_time ="results/run_" + str(numb)
     else:
-        current_run_and_time = "results/"+name_run
+        current_run_and_time = "results/"+special_name
     directory = current_run_and_time
     train_log_dir_0 =  current_run_and_time + '/train_l0'
     test_log_dir_0 =   current_run_and_time + '/test_l0'
@@ -62,7 +66,7 @@ def ddpgKennedy(name_run="",total_episodes = 10**3,buffer_size=500, batch_size=6
     test_summary_writer_0 = tf.summary.create_file_writer(test_log_dir_0)
     test_summary_writer_1 = tf.summary.create_file_writer(test_log_dir_1)
 
-    info_optimizers = "optimizer_critic_guess: {} \nOptimizer_actor_l0: {}\nOptimizer_critic_l0: {}\n".format(optimizer_critic_guess.get_config(), optimizer_actor_l0.get_config(), optimizer_critic_l0)
+    info_optimizers = "optimizer_critic_guess: {} \nOptimizer_actor_l0: {}\nOptimizer_critic_l0: {}\n".format(optimizer_critic_guess.get_config(), optimizer_actor_l0.get_config(), optimizer_critic_l0.get_config())
     infor_buffer = "Buffer_size: {}\n Batch_size for sampling: {}\n".format(buffer.buffer_size, batch_size)
     info_epsilons= "epsilon-guess: {}\nepsilon_displacement_noise: {}".format(ep_guess,noise_displacement)
 
@@ -174,25 +178,36 @@ def ddpgKennedy(name_run="",total_episodes = 10**3,buffer_size=500, batch_size=6
     rt = [np.sum(rt[:k]) for k in range(len(rt))]
     rt = rt/np.arange(1,len(rt)+1)
     losses = [[avg_train_l0, avg_test_l0], [ avg_train_l1, avg_test_l1]]
-    BigPlot(buffer,rt, pt, history_betas, history_betas_would_have_done, histo_preds, losses, directory)
-    plot_inside_buffer(buffer, directory)
-    return #rt, pt, history_betas, history_betas_would_have_done, histo_preds, losses, name_directory-
+    if plots:
+        BigPlot(buffer,rt, pt, history_betas, history_betas_would_have_done, histo_preds, losses, directory)
+        plot_inside_buffer(buffer, directory)
+    return "run_"+str(numb)#rt, pt, history_betas, history_betas_would_have_done, histo_preds, losses, name_directory-
 
 
 if __name__ == "__main__":
     info_run = ""
-    for tau in [0.1, 0.01, 0.005]:
-        for lr_critic in [.001, .01]:
-            for noise_displacement in [1, 0.1, 0.001]:
-                for batch_size in [32., 256., 512.]:
-                    name_run = datetime.now().strftime("%m-%d-%H-%-M%-S")
+    to_csv=[]
+    for tau in [0.01]:
+        for lr_critic in [.01]:
+            for noise_displacement in [0.01, 0.1]:
+                for batch_size in [8., 16. , 32., 64., 128., 256., 512.]:
+
+                    # name_run = datetime.now().strftime("%m-%d-%H-%-M%-S")
+
+                    name_run = ddpgKennedy(total_episodes=10**4, noise_displacement=noise_displacement, tau=tau,
+                    buffer_size=10**5, batch_size=batch_size, lr_critic=lr_critic, lr_actor=0.001, plots=True)
+
                     info_run +="***\n***\nname_run: {} ***\ntau: {}\nlr_critic: {}\nnoise_displacement: {}\nbatch_size: {}\n-------\n-------\n\n".format(name_run,tau, lr_critic, noise_displacement, batch_size)
 
-        ddpgKennedy(name_run, total_episodes=10**4, noise_displacement=noise_displacement, tau=tau,
-            buffer_size=10**5, batch_size=batch_size, lr_critic=lr_critic, lr_actor=0.001)
+                    to_csv.append({"name_run":"run_"+str(name_run), "tau": tau, "lr_critic":lr_critic, "noise_displacement": noise_displacement,
+                    "BS":batch_size})
+
 
     # if os.path.isfile("results/info_runs.txt") == True:
     #
     with open("results/info_runs.txt", 'a+') as f:
         f.write(info_run)
         f.close()
+
+    pp = pd.DataFrame(to_csv)
+    pp.to_csv("results/panda_info.csv")

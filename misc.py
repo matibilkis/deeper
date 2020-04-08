@@ -38,6 +38,28 @@ def ps_maxlik(beta):
     return p/2
 
 
+def record():
+    if not os.path.exists("results/number_rune.txt"):
+        with open("results/number_rune.txt", "w+") as f:
+            f.write("0")
+            f.close()
+        a=0
+        number_run=0
+    else:
+        with open("results/number_rune.txt", "r") as f:
+            a = f.readlines()[0]
+            f.close()
+        with open("results/number_rune.txt", "w") as f:
+            f.truncate(0)
+            f.write(str(int(a)+1))
+            f.close()
+        number_run = int(a)+1
+    # if not os.path.exists("run_"+str(number_run)):
+    #     os.makedirs("results/run_"+str(number_run))
+    #
+    # if not os.path.exists("results/run_"+str(number_run)+"/models"):
+    #     os.makedirs("results/run_"+str(number_run)+"/models")
+    return number_run
 
 
 
@@ -74,29 +96,7 @@ def ps_maxlik(beta):
 # #     plt.close()
 # #     return
 #
-# def record():
-#     if not os.path.exists("number_rune.txt"):
-#         with open("number_rune.txt", "w+") as f:
-#             f.write("0")
-#             f.close()
-#         a=0
-#         number_run=0
-#     else:
-#         with open("number_rune.txt", "r") as f:
-#             a = f.readlines()[0]
-#             f.close()
-#         with open("number_rune.txt", "w") as f:
-#             f.truncate(0)
-#             f.write(str(int(a)+1))
-#             f.close()
-#         number_run = int(a)+1
-#     if not os.path.exists("run_"+str(number_run)):
-#         os.makedirs("run_"+str(number_run))
-#
-#     if not os.path.exists("run_"+str(number_run)+"/models"):
-#         os.makedirs("run_"+str(number_run)+"/models")
-#     return number_run
-#
+
 #
 #
 # def create_dataset(number_betas, reward_samples, fake_dataset=False):
