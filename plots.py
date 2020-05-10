@@ -45,74 +45,74 @@ def BigPlot(buffer, rt, pt, history_betas, history_betas_would_have_done, histo_
     ax3.plot(np.arange(1, len(history_betas)+1),-np.ones(len(history_betas))*optimal_beta, color="black", linewidth=15, alpha=0.8)#, label="optimal-beta")
 
 
-    #### in here i plot the loss for the first Q(0), the test and the train. Notice they have different scale! I use different colors!
-    c=0
-    lab = ["train","test"]
-    colors = ["tab:red","tab:blue"]
-    for loss in losses[0]:
-        color = colors[c]
-        ax4.plot(np.arange(1,len(loss)+1),loss,'--',alpha=0.85,c=colors[c], linewidth=5)#, label="Preds Q(" + r'$\beta$'+")-"+lab[c])#, label="Q(n1=0,"+r'$\beta$'+"; g=-1)")
-        ax4.scatter(np.arange(1,len(loss)+1),loss,s=150,alpha=0.85,c=colors[c], linewidth=5)#,label="Preds Q(\beta) - "+lab[c])#, label="Q(n1=0,"+r'$\beta$'+"; g=-1)")
-        ax4.set_xlabel("epoch", size=120)
-        ax4.set_ylabel("Loss Q("+r'$\beta )$', size=100, color =colors[c])
-        ax4.tick_params(axis='y', labelcolor=colors[c])
-        ax4.legend()
-        ax4 = ax4.twinx()  # instantiate a second axes that shares the same x-axis
-        c+=1
+    # #### in here i plot the loss for the first Q(0), the test and the train. Notice they have different scale! I use different colors!
+    # c=0
+    # lab = ["train","test"]
+    # colors = ["tab:red","tab:blue"]
+    # for loss in losses[0]:
+    #     color = colors[c]
+    #     ax4.plot(np.arange(1,len(loss)+1),loss,'--',alpha=0.85,c=colors[c], linewidth=5)#, label="Preds Q(" + r'$\beta$'+")-"+lab[c])#, label="Q(n1=0,"+r'$\beta$'+"; g=-1)")
+    #     ax4.scatter(np.arange(1,len(loss)+1),loss,s=150,alpha=0.85,c=colors[c], linewidth=5)#,label="Preds Q(\beta) - "+lab[c])#, label="Q(n1=0,"+r'$\beta$'+"; g=-1)")
+    #     ax4.set_xlabel("epoch", size=120)
+    #     ax4.set_ylabel("Loss Q("+r'$\beta )$', size=100, color =colors[c])
+    #     ax4.tick_params(axis='y', labelcolor=colors[c])
+    #     ax4.legend()
+    #     ax4 = ax4.twinx()  # instantiate a second axes that shares the same x-axis
+    #     c+=1
 
-    #### in here i plot the loss for the first Q(\beta, n, guess ), the test and the train. Notice they have different scale! I use different colors!
-    c=0
-    for loss in losses[1]:
-        ax5.plot(np.arange(1,len(loss)+1),loss,'--',alpha=0.85,c=colors[c], linewidth=5)#, label="Preds Q(n, "+r'$\beta$'+", guess) - "+lab[c])#, label="Q(n1=0,"+r'$\beta$'+"; g=-1)")
-        ax5.scatter(np.arange(1,len(loss)+1),loss,s=150,alpha=0.85,c=colors[c], linewidth=5)#, label="Preds Q(n, \beta, guess) - "+lab[c])#, label="Q(n1=0,"+r'$\beta$'+"; g=-1)")
-        ax5.set_xlabel("epoch", size=120)
-        ax5.set_ylabel("Loss Q(" + r'$\beta$'+", n, guess)",size=20, color =colors[c])
-        ax5.tick_params(axis='y', size=100, labelcolor=colors[c])
-        #ax5.legend()
-        ax5 = ax5.twinx()  # instantiate a second axes that shares the same x-axis
-        c+=1
-        #plt.tight_layout()  # otherwise the right y-label is slightly clipped
+    # #### in here i plot the loss for the first Q(\beta, n, guess ), the test and the train. Notice they have different scale! I use different colors!
+    # c=0
+    # for loss in losses[1]:
+    #     ax5.plot(np.arange(1,len(loss)+1),loss,'--',alpha=0.85,c=colors[c], linewidth=5)#, label="Preds Q(n, "+r'$\beta$'+", guess) - "+lab[c])#, label="Q(n1=0,"+r'$\beta$'+"; g=-1)")
+    #     ax5.scatter(np.arange(1,len(loss)+1),loss,s=150,alpha=0.85,c=colors[c], linewidth=5)#, label="Preds Q(n, \beta, guess) - "+lab[c])#, label="Q(n1=0,"+r'$\beta$'+"; g=-1)")
+    #     ax5.set_xlabel("epoch", size=120)
+    #     ax5.set_ylabel("Loss Q(" + r'$\beta$'+", n, guess)",size=20, color =colors[c])
+    #     ax5.tick_params(axis='y', size=100, labelcolor=colors[c])
+    #     #ax5.legend()
+    #     ax5 = ax5.twinx()  # instantiate a second axes that shares the same x-axis
+    #     c+=1
+    #     #plt.tight_layout()  # otherwise the right y-label is slightly clipped
+    #
 
-
-    betas_train = buffer.betas
-    for predictions in histo_preds["net_1"].values():
-        ax7.plot(betas_train,predictions["values"]["0"],alpha=0.25, linewidth=5)#, label="epoch: "+str(predictions["epoch_number"])) #, label=r'$\hat{Q}$'+"(n1=0,"+r'$\beta$'+"; g=-1)")
-        ax7.plot(betas_train,predictions["values"]["1"],alpha=0.25, linewidth=5)#, label="epoch: "+str(predictions["epoch_number"]))#,label=r'$\hat{Q}$'+"(n1=0,"+r'$\beta$'+"; g=1)")
-
-        ax8.plot(betas_train,predictions["values"]["2"] ,alpha=0.25,  linewidth=5)#, label="epoch: "+str(predictions["epoch_number"]))#label=r'$\hat{Q}$'+"(n1=1,"+r'$\beta$'+"; g=-1)")
-        ax8.plot(betas_train,predictions["values"]["3"] ,alpha=0.25,  linewidth=5)#, label="epoch: "+str(predictions["epoch_number"]))#,label=r'$\hat{Q}$'+"(n1=1,"+r'$\beta$'+"; g=1)")
-
-    #Now we take the last and plot it in bold!
-    ax7.plot(betas_train,predictions["values"]["0"],alpha=0.85, c="black",linewidth=8)#), label="epoch: "+str(predictions["epoch_number"])) #, label=r'$\hat{Q}$'+"(n1=0,"+r'$\beta$'+"; g=-1)")
-    ax7.plot(betas_train,predictions["values"]["1"],alpha=0.85, c="purple", linewidth=8)#, label="epoch: "+str(predictions["epoch_number"]))#,label=r'$\hat{Q}$'+"(n1=0,"+r'$\beta$'+"; g=1)")
-    ax7.scatter(betas_train,predictions["values"]["0"],alpha=0.85, c="black",s=150)
-    ax7.scatter(betas_train,predictions["values"]["1"],alpha=0.85, c="purple",s=150)
-
-    ax8.plot(betas_train,predictions["values"]["2"] ,alpha=0.85, c="black", linewidth=8)#, label="epoch: "+str(predictions["epoch_number"]))#label=r'$\hat{Q}$'+"(n1=1,"+r'$\beta$'+"; g=-1)")
-    ax8.plot(betas_train,predictions["values"]["3"] ,alpha=0.85,  c="purple",linewidth=8)#, label="epoch: "+str(predictions["epoch_number"]))#,label=r'$\hat{Q}$'+"(n1=1,"+r'$\beta$'+"; g=1)")
-    ax8.scatter(betas_train,predictions["values"]["2"],alpha=0.85, c="black",s=150)
-    ax8.scatter(betas_train,predictions["values"]["3"],alpha=0.85, c="purple",s=150)
-
-
-        ### we do the same for ax3:
-
-    for predictions in histo_preds["net_0"].values():
-        ax6.plot(betas_train,predictions["values"],alpha=0.15, linewidth=5)#, label="epoch: "+str(predictions["epoch_number"])) #, label=r'$\hat{Q}$'+"(n1=0,"+r'$\beta$'+"; g=-1)")
-
-    #The last one black and bigger!
-    ax6.plot(betas_train,predictions["values"],alpha=0.85,c="black", linewidth=5)#, label="epoch: "+str(predictions["epoch_number"])) #, label=r'$\hat{Q}$'+"(n1=0,"+r'$\beta$'+"; g=-1)")
-
-
-    ##### here we plot the true values (that we want to learn!!!) ###
-    ax7.plot(buffer.betas,[qval(b, 0, -1) for b in buffer.betas],'--',alpha=0.85,c="red", linewidth=8, label="Q(n1=0,"+r'$\beta$'+"; g=-1)")
-    ax7.plot(buffer.betas,[qval(b, 0, 1) for b in buffer.betas],'--',alpha=0.85,c="blue",  linewidth=8,label="Q(n1=0,"+r'$\beta$'+"; g=1)")
-
-    ax8.plot(buffer.betas,[qval(b, 1, -1) for b in buffer.betas],'--',alpha=0.85,c="red",  linewidth=8,label="Q(n1=1,"+r'$\beta$'+"; g=-1)")
-    ax8.plot(buffer.betas,[qval(b, 1, 1) for b in buffer.betas],'--',alpha=0.85,c="blue",  linewidth=8,label="Q(n1=1,"+r'$\beta$'+"; g=1)")
-
-    ax6.plot(buffer.betas,[ps_maxlik(b) for b in buffer.betas],'--',alpha=0.85,c="red", linewidth=8)
-    ax6.set_ylabel(r'$P_s\; ( \beta )$', size=20)
-    ##### here we plot the true values (that we want to learn!!!) ###
+    # betas_train = buffer.betas
+    # for predictions in histo_preds["net_1"].values():
+    #     ax7.plot(betas_train,predictions["values"]["0"],alpha=0.25, linewidth=5)#, label="epoch: "+str(predictions["epoch_number"])) #, label=r'$\hat{Q}$'+"(n1=0,"+r'$\beta$'+"; g=-1)")
+    #     ax7.plot(betas_train,predictions["values"]["1"],alpha=0.25, linewidth=5)#, label="epoch: "+str(predictions["epoch_number"]))#,label=r'$\hat{Q}$'+"(n1=0,"+r'$\beta$'+"; g=1)")
+    #
+    #     ax8.plot(betas_train,predictions["values"]["2"] ,alpha=0.25,  linewidth=5)#, label="epoch: "+str(predictions["epoch_number"]))#label=r'$\hat{Q}$'+"(n1=1,"+r'$\beta$'+"; g=-1)")
+    #     ax8.plot(betas_train,predictions["values"]["3"] ,alpha=0.25,  linewidth=5)#, label="epoch: "+str(predictions["epoch_number"]))#,label=r'$\hat{Q}$'+"(n1=1,"+r'$\beta$'+"; g=1)")
+    #
+    # #Now we take the last and plot it in bold!
+    # ax7.plot(betas_train,predictions["values"]["0"],alpha=0.85, c="black",linewidth=8)#), label="epoch: "+str(predictions["epoch_number"])) #, label=r'$\hat{Q}$'+"(n1=0,"+r'$\beta$'+"; g=-1)")
+    # ax7.plot(betas_train,predictions["values"]["1"],alpha=0.85, c="purple", linewidth=8)#, label="epoch: "+str(predictions["epoch_number"]))#,label=r'$\hat{Q}$'+"(n1=0,"+r'$\beta$'+"; g=1)")
+    # ax7.scatter(betas_train,predictions["values"]["0"],alpha=0.85, c="black",s=150)
+    # ax7.scatter(betas_train,predictions["values"]["1"],alpha=0.85, c="purple",s=150)
+    #
+    # ax8.plot(betas_train,predictions["values"]["2"] ,alpha=0.85, c="black", linewidth=8)#, label="epoch: "+str(predictions["epoch_number"]))#label=r'$\hat{Q}$'+"(n1=1,"+r'$\beta$'+"; g=-1)")
+    # ax8.plot(betas_train,predictions["values"]["3"] ,alpha=0.85,  c="purple",linewidth=8)#, label="epoch: "+str(predictions["epoch_number"]))#,label=r'$\hat{Q}$'+"(n1=1,"+r'$\beta$'+"; g=1)")
+    # ax8.scatter(betas_train,predictions["values"]["2"],alpha=0.85, c="black",s=150)
+    # ax8.scatter(betas_train,predictions["values"]["3"],alpha=0.85, c="purple",s=150)
+    #
+    #
+    #     ### we do the same for ax3:
+    #
+    # for predictions in histo_preds["net_0"].values():
+    #     ax6.plot(betas_train,predictions["values"],alpha=0.15, linewidth=5)#, label="epoch: "+str(predictions["epoch_number"])) #, label=r'$\hat{Q}$'+"(n1=0,"+r'$\beta$'+"; g=-1)")
+    #
+    # #The last one black and bigger!
+    # ax6.plot(betas_train,predictions["values"],alpha=0.85,c="black", linewidth=5)#, label="epoch: "+str(predictions["epoch_number"])) #, label=r'$\hat{Q}$'+"(n1=0,"+r'$\beta$'+"; g=-1)")
+    #
+    #
+    # ##### here we plot the true values (that we want to learn!!!) ###
+    # ax7.plot(buffer.betas,[qval(b, 0, -1) for b in buffer.betas],'--',alpha=0.85,c="red", linewidth=8, label="Q(n1=0,"+r'$\beta$'+"; g=-1)")
+    # ax7.plot(buffer.betas,[qval(b, 0, 1) for b in buffer.betas],'--',alpha=0.85,c="blue",  linewidth=8,label="Q(n1=0,"+r'$\beta$'+"; g=1)")
+    #
+    # ax8.plot(buffer.betas,[qval(b, 1, -1) for b in buffer.betas],'--',alpha=0.85,c="red",  linewidth=8,label="Q(n1=1,"+r'$\beta$'+"; g=-1)")
+    # ax8.plot(buffer.betas,[qval(b, 1, 1) for b in buffer.betas],'--',alpha=0.85,c="blue",  linewidth=8,label="Q(n1=1,"+r'$\beta$'+"; g=1)")
+    #
+    # ax6.plot(buffer.betas,[ps_maxlik(b) for b in buffer.betas],'--',alpha=0.85,c="red", linewidth=8)
+    # ax6.set_ylabel(r'$P_s\; ( \beta )$', size=20)
+    # ##### here we plot the true values (that we want to learn!!!) ###
 
 
 

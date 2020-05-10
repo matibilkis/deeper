@@ -1,15 +1,20 @@
 import tensorflow as tf
 from tensorflow.keras.layers import Dense
 import numpy as np
-tf.keras.backend.set_floatx('float64')
-
+tf.compat.v1.enable_eager_execution()
+tf.executing_eagerly()
 
 class Critic(tf.keras.Model):
     #input_dim: 1 if layer=0, 3 if layer= 2, for the Kennedy receiver ##
-    def __init__(self, input_dim, valreg=0.01, seed_val=0.1):
+    def __init__(self, valreg=0.01, seed_val=0.1, pad_value=-7.):
         super(Critic,self).__init__()
 
-        self.l1 = Dense(50, input_shape=(input_dim,),kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
+        self.pad_value = pad_value
+        self.mask = tf.keras.layers.Masking(mask_value=pad_value,
+                                  input_shape=(2, 2))
+        self.lstm = tf.keras.layers.LSTM(250, return_sequences=True)
+
+        self.l1 = Dense(50,kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
         bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
         kernel_regularizer=tf.keras.regularizers.l1(valreg),
     activity_regularizer=tf.keras.regularizers.l2(valreg))
@@ -18,17 +23,8 @@ class Critic(tf.keras.Model):
     activity_regularizer=tf.keras.regularizers.l2(valreg),
     kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
     bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val))
-        self.l3 = Dense(50, kernel_regularizer=tf.keras.regularizers.l1(valreg),
-    activity_regularizer=tf.keras.regularizers.l2(valreg),
-    kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
-    bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val))
 
-        self.l4 = Dense(50, kernel_regularizer=tf.keras.regularizers.l1(valreg),
-    activity_regularizer=tf.keras.regularizers.l2(valreg),
-    kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
-    bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val))
-
-        self.l5 = Dense(1, kernel_regularizer=tf.keras.regularizers.l1(valreg),
+        self.l3 = Dense(1, kernel_regularizer=tf.keras.regularizers.l1(valreg),
     activity_regularizer=tf.keras.regularizers.l2(valreg),
     kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
     bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val))
@@ -46,43 +42,110 @@ class Critic(tf.keras.Model):
         self.set_weights(weights)
         return
 
-    def call(self, input):
-        feat = tf.nn.relu(self.l1(input))
-#        feat = tf.nn.dropout(feat, rate=0.01)
- #       feat = tf.nn.relu(self.l2(feat))
-  #      feat = tf.nn.dropout(feat, rate=0.01)
-   #     feat = tf.nn.relu(self.l3(feat))
-        feat = tf.nn.relu(self.l4(feat))
-        feat = tf.nn.sigmoid(self.l5(feat))
+    def call(self, inputs):
+
+        feat = self.mask(inputs)
+        feat= self.lstm(feat)
+        feat = tf.nn.relu(self.l1(feat))
+        feat = tf.nn.relu(self.l2(feat))
+        feat = tf.nn.sigmoid(self.l3(feat))
         return feat
 
-    def calculate_greedy_from_batch(self, batch):
-        """ this function is only to intended for Q(n, beta, guess).
-        Assuming batch = np.array([[beta, n, guess], [beta1, n1, guess], ...])
+
+    def process_sequence(self,sample_buffer, pad_value = -4., LAYERS=1):
+        """" gets data obtained from N experiments: data.shape = (N, 2L+1),
+        where +1 accounts for the guess and 2L for (beta, outcome).
+
+        [[a0, o1, a1, o2, a2, o3, a4]
+         [same but other experiment]
+
+        ]
+
+        and returns an array of shape (experiments, queries_RNN, 2 ), as accepted by an RNN
+        The idea is that i input [\beta, pad_value], and then [outcome, guess].
+
+        Or if I have two layers [\beta, pa_value], [outcome, beta2], [outcome, guess],
+
+        so the number of "queries" to the RNN is layers+1,
+        and i'm always interested in putting 2 values more.
 
         """
-        a = batch.copy()
-        preds1 = self(a)
-        a[:,2] = -a[:,2]
-        preds2 = self(a)
+        batch_size = sample_buffer.shape[0]
+        data = sample_buffer[:,0:(LAYERS+1+1)]
+        pad_value = -4.
+        padded_data = np.ones((batch_size,LAYERS+1, 2))*pad_value
+        padded_data[:,0][:,0] = data[:,0]
+        for k in range(1,LAYERS+1):
+            padded_data[:,k] = data[:,[k,k+1]]
+
+        rewards_obtained = np.zeros((batch_size, LAYERS+1)).astype(np.float32)
+        rewards_obtained[:,-1] = sample_buffer[:,-1]
+
+
+        return padded_data, rewards_obtained
+
+    def pad_single_sequence(self, seq, pad_value = -4., LAYERS=1):
+        """"
+        input: [a0, o1, a1, o2, a2, o3, a4]
+
+        output: [[a0, pad], [o1, a1], [...]]
+
+        the cool thing is that then you can put this to predict the greedy guess/action.
+        """
+
+
+        pad_value = -4.
+        padded_data = np.ones((1,LAYERS+1, 2))*pad_value
+        padded_data[0][0][0] = seq[0]
+        #padded_data[0][0] = data[0]
+        for k in range(1,LAYERS+1):
+            padded_data[0][k] = seq[k:(k+2)]
+        return padded_data
+
+
+    def give_td_error_Kennedy_guess(self,batched_input,sequential_rews_with_zeros):
+        '''
+        this function takes a batch with its corresponding labels
+        and retrieves what the true labels are according to network
+        prodection on next states.
+
+        For instance, my datapoint is [(\beta, pad), (n, guess)]
+        and i want [Max_g Q(\beta, n, guess), reward].
+
+
+        TO DO: extend this to more layers!!!
+
+        So what you want is
+        [Max_{a_1} Q(a0, o1, a_1),
+        Max_{a_2} Q(a0, o1, a_1, o2, a_2)
+        ,...,
+        Max_g Q(h, guess)]
+
+        But of course, we can't take the Max_g, so we replace by the target actor's choice !!!
+        '''
+        b = batched_input.copy()
+        ll = sequential_rews_with_zeros.copy()
+        preds1 = self(b)
+        b[:,1][:,1] = -b[:,1][:,1]
+        preds2 = self(b)
         both = tf.concat([preds1,preds2],1)
-        maxs = np.squeeze(tf.math.reduce_max(both,axis=1))
-        maxs = np.expand_dims(maxs, axis=1)
-        return maxs
+        maxs = np.squeeze(tf.math.reduce_max(both,axis=1).numpy())
+        ll[:,0] = maxs + ll[:,0]
+        ll = np.expand_dims(ll,axis=1)
+        return ll
 
-    def give_favourite_guess(self, beta, outcome):
-        """"This funciton is only intended for Q(n, beta, guess)"""
-        h1a2 = np.array([[beta, outcome,-1.]])
-        pred_minus = self(h1a2)
-        h1a2[:,2] = 1.
-        pred_plus = self(h1a2)
-        both = tf.concat([pred_plus,pred_minus],1)
+
+
+
+    def give_favourite_guess(self,sequence):
+        """"sequence should be [[beta, pad], [outcome, guess]] """
+        pred_1 = self(sequence)
+        sequence[:,1][:,1] = -sequence[:,1][:,1]
+        pred_2 = self(sequence)
+        both = tf.concat([pred_1,pred_2],1)
         maxs = tf.argmax(both,axis=1)
-        guess = (-1)**maxs.numpy()[0]
+        guess = (-1)**maxs.numpy()[0][0]
         return guess
-
-    def __str__(self):
-        return self.name
 
 
 
@@ -137,40 +200,9 @@ class Actor(tf.keras.Model):
         feat = tf.nn.tanh(self.l5(feat))
         return feat
 
-    def calculate_greedy_from_batch(self, batch):
-        """ this function is only to intended for Q(n, beta, guess)"""
-        a = batch[1].copy()
-        preds1 = self(a)
-        a[:,2] = -a[:,2]
-        preds2 = self(a)
-        both = tf.concat([preds1,preds2],1)
-        maxs = np.squeeze(tf.math.reduce_max(both,axis=1))
-        maxs = np.expand_dims(maxs, axis=1)
-        return maxs
 
     def __str__(self):
         return self.name
-
-
-
-
-def testing_data(losses, buffer,networks):
-    test_loss_l0, test_loss_l1 = losses
-    actor_q0, critic_q0, critic_guess, target_guess = networks
-    ### this is the test data for the guess network, defined in Dataset() classs
-    predstest = critic_guess(buffer.test_l1[:,[0,1,2]])
-    targets_1 = np.expand_dims(buffer.test_l1[:,3], axis=1)
-    loss_test_l1 = tf.keras.losses.MSE(targets_1, predstest)
-    loss_test_l1 = tf.reduce_mean(loss_test_l1)
-    test_loss_l1(loss_test_l1)
-
-    ### this is the test data for the \hat{Q}('beta) #####
-    preds_test_l0 = critic_q0(np.expand_dims(buffer.test_l0[:,0], axis=1))
-    loss_y0 = tf.keras.losses.MSE(np.expand_dims(buffer.test_l0[:,1], axis=1), preds_test_l0)
-    loss_y0 = tf.reduce_mean(loss_y0)
-    test_loss_l0(loss_y0)
-
-    return
 
 
 
