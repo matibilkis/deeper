@@ -80,8 +80,6 @@ class Critic(tf.keras.Model):
 
         rewards_obtained = np.zeros((batch_size, LAYERS+1)).astype(np.float32)
         rewards_obtained[:,-1] = sample_buffer[:,-1]
-
-
         return padded_data, rewards_obtained
 
     def pad_single_sequence(self, seq, pad_value = -4., LAYERS=1):
@@ -197,7 +195,7 @@ class Actor(tf.keras.Model):
         feat = tf.nn.dropout(feat, rate=0.01)
    #     feat = tf.nn.relu(self.l3(feat))
         feat = tf.nn.relu(self.l4(feat))
-        feat = tf.nn.tanh(self.l5(feat))
+        feat = tf.nn.sigmoid(self.l5(feat))
         return feat
 
 
