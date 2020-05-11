@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 from tqdm import tqdm as tqdm
-tf.keras.backend.set_floatx('float64')
+tf.keras.backend.set_floatx('float32')
 from collections import deque
 from datetime import datetime
 import random
@@ -30,15 +30,15 @@ def optimization_step(experiences,critic, critic_target, actor, optimizer_critic
 
 
     with tf.GradientTape() as tape:
-        ones = tf.ones(shape=(experiences.shape[0],1))
-        actions = tf.cast(actor(np.expand_dims(np.zeros(len(experiences)),axis=1)), tf.float32)   #This can be improved i think!! (the conversion... )
+        ones = tf.ones(shape=(experiences.shape[0],1))*critic.pad_value
+        actions = actor(np.expand_dims(np.zeros(len(experiences)),axis=1))   #This can be improved i think!! (the conversion... )
 
         tape.watch(actions)
         qvals = critic(tf.expand_dims(tf.concat([actions, ones], axis=1),axis=1))
         dq_da = tape.gradient(qvals, actions)
 
     with tf.GradientTape() as tape:
-        actionss = tf.cast(actor(np.expand_dims(np.zeros(len(experiences)),axis=1)), tf.float32)
+        actionss = actor(np.expand_dims(np.zeros(len(experiences)),axis=1))
         da_dtheta = tape.gradient(actionss, actor.trainable_variables, output_gradients=-dq_da)
 
     optimizer_actor.apply_gradients(zip(da_dtheta, actor.trainable_variables))
@@ -205,15 +205,15 @@ def ddpgKennedy(special_name="",total_episodes = 10**3,buffer_size=500, batch_si
 if __name__ == "__main__":
     info_run = ""
     to_csv=[]
-    for tau in [0.005, 0.5]:
-        for lr_critic in [0.0005, 0.0001]:
-            for noise_displacement in [.5, 0.25, 0.1]:
-                for batch_size in [128., 512]:
+    for tau in [0.005]:
+        for lr_critic in [0.0005]:
+            for noise_displacement in [.5]:
+                for batch_size in [64.]:
 
                     # name_run = datetime.now().strftime("%m-%d-%H-%-M%-S")
 
                     name_run = ddpgKennedy(total_episodes=2000, noise_displacement=noise_displacement, tau=tau,
-                    buffer_size=2*10**6, batch_size=batch_size, lr_critic=lr_critic, lr_actor=lr_critic, plots=True)
+                    buffer_size=2*10**6, batch_size=batch_size, lr_critic=lr_critic, lr_actor=0.001, plots=True)
 
                     info_run +="***\n***\nname_run: {} ***\ntau: {}\nlr_critic: {}\nnoise_displacement: {}\nbatch_size: {}\n-------\n-------\n\n".format(name_run,tau, lr_critic, noise_displacement, batch_size)
 

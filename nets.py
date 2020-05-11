@@ -1,6 +1,8 @@
 import tensorflow as tf
 from tensorflow.keras.layers import Dense
 import numpy as np
+tf.keras.backend.set_floatx('float32')
+
 tf.compat.v1.enable_eager_execution()
 tf.executing_eagerly()
 
@@ -17,17 +19,22 @@ class Critic(tf.keras.Model):
         self.l1 = Dense(250,kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
         bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
         kernel_regularizer=tf.keras.regularizers.l1(valreg),
-    activity_regularizer=tf.keras.regularizers.l2(valreg), dtype=tf.float32)
+    activity_regularizer=tf.keras.regularizers.l2(valreg))
 
         self.l2 = Dense(100, kernel_regularizer=tf.keras.regularizers.l1(valreg),
     activity_regularizer=tf.keras.regularizers.l2(valreg),
     kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
-    bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val), dtype=tf.float32)
+    bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val))
 
-        self.l3 = Dense(1, kernel_regularizer=tf.keras.regularizers.l1(valreg),
+        self.l3 = Dense(100, kernel_regularizer=tf.keras.regularizers.l1(valreg),
     activity_regularizer=tf.keras.regularizers.l2(valreg),
     kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
-    bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val), dtype=tf.float32)
+    bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val))
+
+        self.l4 = Dense(1, kernel_regularizer=tf.keras.regularizers.l1(valreg),
+    activity_regularizer=tf.keras.regularizers.l2(valreg),
+    kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
+    bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val))
 
 
 
@@ -54,11 +61,13 @@ class Critic(tf.keras.Model):
         feat = tf.nn.dropout(feat, rate=0.01)
 
         feat = tf.nn.relu(self.l2(feat))
-        feat = tf.nn.sigmoid(self.l3(feat))
+        feat = tf.nn.relu(self.l3(feat))
+        feat = tf.nn.sigmoid(self.l4(feat))
+
         return feat
 
 
-    def process_sequence(self,sample_buffer, pad_value = -4., LAYERS=1):
+    def process_sequence(self,sample_buffer, LAYERS=1):
         """" gets data obtained from N experiments: data.shape = (N, 2L+1),
         where +1 accounts for the guess and 2L for (beta, outcome).
 
@@ -78,8 +87,7 @@ class Critic(tf.keras.Model):
         """
         batch_size = sample_buffer.shape[0]
         data = sample_buffer[:,0:(LAYERS+1+1)]
-        pad_value = -4.
-        padded_data = np.ones((batch_size,LAYERS+1, 2))*pad_value
+        padded_data = np.ones((batch_size,LAYERS+1, 2))*self.pad_value
         padded_data[:,0][:,0] = data[:,0]
         for k in range(1,LAYERS+1):
             padded_data[:,k] = data[:,[k,k+1]]
@@ -94,9 +102,9 @@ class Critic(tf.keras.Model):
 
 
     @tf.function
-    def process_sequence_tf(self, sample_buffer, pad_value = -4., LAYERS=1):
+    def process_sequence_tf(self, sample_buffer, LAYERS=1):
         sample_buffer = tf.convert_to_tensor(sample_buffer)
-        first = tf.stack([sample_buffer[:,0], pad_value*tf.ones((sample_buffer.shape[0]))], axis=-1)
+        first = tf.stack([sample_buffer[:,0], self.pad_value*tf.ones((sample_buffer.shape[0]))], axis=-1)
         for k in range(1,LAYERS+1):
             to_stack = tf.stack([sample_buffer[:,k], sample_buffer[:,k+1]], axis=-1)
             first = tf.stack([first, to_stack], axis=1)
@@ -106,7 +114,7 @@ class Critic(tf.keras.Model):
         rewards = tf.expand_dims(rewards, axis=2)
         return first, rewards
 
-    def pad_single_sequence(self, seq, pad_value = -4., LAYERS=1):
+    def pad_single_sequence(self, seq, LAYERS=1):
         """"
         input: [a0, o1, a1, o2, a2, o3, a4]
 
@@ -115,7 +123,7 @@ class Critic(tf.keras.Model):
         the cool thing is that then you can put this to predict the greedy guess/action.
         """
         pad_value = -4.
-        padded_data = np.ones((1,LAYERS+1, 2))*pad_value
+        padded_data = np.ones((1,LAYERS+1, 2))*self.pad_value
         padded_data[0][0][0] = seq[0]
         #padded_data[0][0] = data[0]
         for k in range(1,LAYERS+1):
@@ -226,10 +234,10 @@ class Actor(tf.keras.Model):
 
     def call(self, input):
         feat = tf.nn.relu(self.l1(input))
-        feat = tf.nn.dropout(feat, rate=0.01)
-        feat = tf.nn.relu(self.l2(feat))
-        feat = tf.nn.dropout(feat, rate=0.001)
-        feat = tf.nn.relu(self.l3(feat))
+        # feat = tf.nn.dropout(feat, rate=0.01)
+        # feat = tf.nn.relu(self.l2(feat))
+        # feat = tf.nn.dropout(feat, rate=0.001)
+        # feat = tf.nn.relu(self.l3(feat))
         feat = tf.nn.relu(self.l4(feat))
         feat = tf.nn.tanh(self.l5(feat))
         return feat
