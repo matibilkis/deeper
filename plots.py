@@ -51,7 +51,12 @@ def BigPlot(buffer, rt, pt, history_betas, history_betas_would_have_done, histo_
     # colors = ["tab:red","tab:blue"]
     # for loss in losses[0]:
     #     color = colors[c]
-    #     ax4.plot(np.arange(1,len(loss)+1),loss,'--',alpha=0.85,c=colors[c], linewidth=5)#, label="Preds Q(" + r'$\beta$'+")-"+lab[c])#, label="Q(n1=0,"+r'$\beta$'+"; g=-1)")
+    loss_train = losses[0]
+    ax4.plot(np.arange(1,len(loss_train)+1),loss_train,'--',alpha=0.85,c="red", linewidth=5)#, label="Preds Q(" + r'$\beta$'+")-"+lab[c])#,
+     # label="Q(n1=0,"+r'$\beta$'+"; g=-1)")
+
+    loss_train = losses[1]
+    ax4.plot(np.arange(1,len(loss_train)+1),loss_train,'--',alpha=0.85,c="blue", linewidth=5)#, label="Preds Q(" + r'$\beta$'+")-"+lab[c])#,
     #     ax4.scatter(np.arange(1,len(loss)+1),loss,s=150,alpha=0.85,c=colors[c], linewidth=5)#,label="Preds Q(\beta) - "+lab[c])#, label="Q(n1=0,"+r'$\beta$'+"; g=-1)")
     #     ax4.set_xlabel("epoch", size=120)
     #     ax4.set_ylabel("Loss Q("+r'$\beta )$', size=100, color =colors[c])

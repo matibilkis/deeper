@@ -16,7 +16,6 @@ from misc import Prob, ps_maxlik, qval, record
 from nets import *
 from buffer import ReplayBuffer
 
-
 def optimization_step(experiences,critic, critic_target, actor, optimizer_critic, optimizer_actor, train_loss):
     sequences, zeroed_rews = critic.process_sequence(experiences)
     labels_critic = critic_target.give_td_error_Kennedy_guess( sequences, zeroed_rews)
@@ -29,7 +28,6 @@ def optimization_step(experiences,critic, critic_target, actor, optimizer_critic
         optimizer_critic.apply_gradients(zip(grads, critic.trainable_variables))
         train_loss(loss_critic)
 
-    critic_target.update_target_parameters(critic, tau=0.05)
 
     with tf.GradientTape() as tape:
         ones = tf.ones(shape=(experiences.shape[0],1))
@@ -58,7 +56,7 @@ def ddpgKennedy(special_name="",total_episodes = 10**3,buffer_size=500, batch_si
     amplitude = 0.4
     buffer = ReplayBuffer(buffer_size=buffer_size)
 
-    critic = Critic()
+    critic = Critic(valreg=0.05)
     critic_target = Critic()
     actor = Actor(input_dim=1)
     # actor_target = Actor(input_dim=1) THIS IS NOT REQUIRED FOR THE FIRST LAYER ONLY
@@ -129,10 +127,11 @@ def ddpgKennedy(special_name="",total_episodes = 10**3,buffer_size=500, batch_si
         else:
             sequence = np.array([[ [beta, critic.pad_value], [outcome, -1.]]  ]).astype(np.float32)
             guess = critic.give_favourite_guess(sequence)
-        if guess == alice_phase:
-            reward = 1.
-        else:
-            reward = 0.
+        # if guess == alice_phase:
+        #     reward = 1.
+        # else:
+        #     reward = 0.
+        reward = qval(beta, outcome, guess)
         buffer.add(beta, outcome, guess, reward)
 
 
@@ -141,11 +140,13 @@ def ddpgKennedy(special_name="",total_episodes = 10**3,buffer_size=500, batch_si
 
         experiences = buffer.sample(batch_size)
         optimization_step(experiences,critic, critic_target, actor, optimizer_critic, optimizer_actor, train_loss)
+        critic_target.update_target_parameters(critic, tau=0.05)
 
 
 #####
         avg_train.append(train_loss.result().numpy())
-        avg_test.append(test_loss.result().numpy())
+        avg_test.append(0.)
+        # avg_test.append(test_loss.result().numpy())
     #
         rt.append(reward)
     #
@@ -204,15 +205,15 @@ def ddpgKennedy(special_name="",total_episodes = 10**3,buffer_size=500, batch_si
 if __name__ == "__main__":
     info_run = ""
     to_csv=[]
-    for tau in [0.001]:
-        for lr_critic in [.001]:
-            for noise_displacement in [.25]:
-                for batch_size in [256.]:
+    for tau in [0.005, 0.5]:
+        for lr_critic in [0.0005, 0.0001]:
+            for noise_displacement in [.5, 0.25, 0.1]:
+                for batch_size in [128., 512]:
 
                     # name_run = datetime.now().strftime("%m-%d-%H-%-M%-S")
 
-                    name_run = ddpgKennedy(total_episodes=10**3, noise_displacement=noise_displacement, tau=tau,
-                    buffer_size=10**3, batch_size=batch_size, lr_critic=lr_critic, lr_actor=0.001, plots=True)
+                    name_run = ddpgKennedy(total_episodes=2000, noise_displacement=noise_displacement, tau=tau,
+                    buffer_size=2*10**6, batch_size=batch_size, lr_critic=lr_critic, lr_actor=lr_critic, plots=True)
 
                     info_run +="***\n***\nname_run: {} ***\ntau: {}\nlr_critic: {}\nnoise_displacement: {}\nbatch_size: {}\n-------\n-------\n\n".format(name_run,tau, lr_critic, noise_displacement, batch_size)
 

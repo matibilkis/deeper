@@ -12,14 +12,14 @@ class Critic(tf.keras.Model):
         self.pad_value = pad_value
         self.mask = tf.keras.layers.Masking(mask_value=pad_value,
                                   input_shape=(2, 2))
-        self.lstm = tf.keras.layers.LSTM(500, return_sequences=True)
+        self.lstm = tf.keras.layers.LSTM(250, return_sequences=True)
 
-        self.l1 = Dense(250,kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
+        self.l1 = Dense(50,kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
         bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
         kernel_regularizer=tf.keras.regularizers.l1(valreg),
     activity_regularizer=tf.keras.regularizers.l2(valreg), dtype=tf.float32)
 
-        self.l2 = Dense(100, kernel_regularizer=tf.keras.regularizers.l1(valreg),
+        self.l2 = Dense(50, kernel_regularizer=tf.keras.regularizers.l1(valreg),
     activity_regularizer=tf.keras.regularizers.l2(valreg),
     kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
     bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val), dtype=tf.float32)
@@ -31,10 +31,9 @@ class Critic(tf.keras.Model):
 
 
 
+
     def update_target_parameters(self,primary_net, tau=0.01):
         #### only
-        # for i,j in zip(self.get_weights(), primary_net.get_weights()):
-        #     tf.assign(i, tau*j + (i-tau)*i )
         prim_weights = primary_net.get_weights()
         targ_weights = self.get_weights()
         weights = []
@@ -95,8 +94,8 @@ class Critic(tf.keras.Model):
 
     @tf.function
     def process_sequence_tf(self, sample_buffer, pad_value = -4., LAYERS=1):
-        sample_buffer = tf.convert_to_tensor(sample_buffer)
-        first = tf.stack([sample_buffer[:,0], pad_value*tf.ones((sample_buffer.shape[0]))], axis=-1)
+        sample_buffer = tf.convert_to_tensor(experiences.astype(np.float32))
+        first = tf.stack([sample_buffer[:,0], pad_value*tf.ones((64,))], axis=-1)
         for k in range(1,LAYERS+1):
             to_stack = tf.stack([sample_buffer[:,k], sample_buffer[:,k+1]], axis=-1)
             first = tf.stack([first, to_stack], axis=1)
@@ -159,7 +158,7 @@ class Critic(tf.keras.Model):
     def give_td_error_Kennedy_guess_tf(self,batched_input,batched_zeroed_reward):
         preds1 = self(batched_input)
 
-        Level1 = tf.unstack(batched_input, axis=1)
+        Level1 = tf.unstack(b, axis=1)
         pad, guess = tf.unstack(Level1[1], axis=1)
         new_guess = tf.multiply(guess,-1)
         flipped_guess = tf.stack([Level1[0],tf.stack([pad, new_guess], axis=1)], axis=2)
@@ -181,108 +180,7 @@ class Critic(tf.keras.Model):
         guess = (-1)**maxs.numpy()[0][0]
         return guess
 
-
-
-##### ACTOR CLASSS ####
-class Actor(tf.keras.Model):
-    #input_dim: 1 if layer=0, 3 if layer= 2, for the Kennedy receiver ##
-    def __init__(self, input_dim=1, valreg=0.01, seed_val=0.1):
-        super(Actor,self).__init__()
-
-        self.l1 = Dense(50, input_shape=(input_dim,),kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
-        bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
-        kernel_regularizer=tf.keras.regularizers.l1(valreg),
-    activity_regularizer=tf.keras.regularizers.l2(valreg))
-
-        self.l2 = Dense(50, kernel_regularizer=tf.keras.regularizers.l1(valreg),
-    activity_regularizer=tf.keras.regularizers.l2(valreg),
-    kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
-    bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val))
-        self.l3 = Dense(50, kernel_regularizer=tf.keras.regularizers.l1(valreg),
-    activity_regularizer=tf.keras.regularizers.l2(valreg),
-    kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
-    bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val))
-
-        self.l4 = Dense(50, kernel_regularizer=tf.keras.regularizers.l1(valreg),
-    activity_regularizer=tf.keras.regularizers.l2(valreg),
-    kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
-    bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val))
-
-        self.l5 = Dense(1, kernel_regularizer=tf.keras.regularizers.l1(valreg),
-    activity_regularizer=tf.keras.regularizers.l2(valreg),
-    kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
-    bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val))
-
-
-    def update_target_parameters(self,primary_net, tau=0.01):
-        #### only
-        prim_weights = primary_net.get_weights()
-        targ_weights = self.get_weights()
-        weights = []
-        for i in tf.range(len(prim_weights)):
-            weights.append(tau * prim_weights[i] + (1 - tau) * targ_weights[i])
-        self.set_weights(weights)
-        return
-
-    def call(self, input):
-        feat = tf.nn.relu(self.l1(input))
-        feat = tf.nn.dropout(feat, rate=0.01)
-        feat = tf.nn.relu(self.l2(feat))
-        feat = tf.nn.dropout(feat, rate=0.001)
-        feat = tf.nn.relu(self.l3(feat))
-        feat = tf.nn.relu(self.l4(feat))
-        feat = tf.nn.tanh(self.l5(feat))
-        return feat
-
-
-    def __str__(self):
-        return self.name
-
-
-
-def optimization_step(networks, optimizers, losses, buffer, batch_size=500., tau=0.01, repetitions=1):
-    actor_q0, critic_q0, critic_guess, target_guess = networks
-    optimizer_critic_guess,  optimizer_actor_l0, optimizer_critic_l0 = optimizers
-    train_loss_l0, train_loss_l1 = losses
-    for thoughts in range(repetitions):
-        experiences = buffer.sample(batch_size)
-
-        ##### update the critic guess according to rewards obtained
-        with tf.GradientTape() as tape:
-            tape.watch(critic_guess.trainable_variables)
-            preds_cguess = critic_guess(experiences[:,[0,1,2]])
-            labels_cguess = np.expand_dims(experiences[:,3],axis=1)
-            loss_prim_guess = tf.keras.losses.MSE(labels_cguess, preds_cguess)
-            loss_prim_guess = tf.reduce_mean(loss_prim_guess)
-            grads = tape.gradient(loss_prim_guess, critic_guess.trainable_variables)
-            optimizer_critic_guess.apply_gradients(zip(grads, critic_guess.trainable_variables))
-            train_loss_l1(loss_prim_guess)
-
-        ##### update the target guess ######
-        target_guess.update_target_parameters(critic_guess, tau=0.01) #check this value !
-
-        #### obtain the labels for the update of Q(\beta)
-        labels_critic_l0 = target_guess.calculate_greedy_from_batch(experiences[:,[0,1,2]]) #greedy from target; this is the label for net_0!!
-
-        with tf.GradientTape() as tape:
-            tape.watch(critic_q0.trainable_variables)
-            preds0 = critic_q0(np.expand_dims(experiences[:,0],axis=1))
-            loss_0 = tf.keras.losses.MSE(labels_critic_l0,preds0)
-            loss_0 = tf.reduce_mean(loss_0)
-            grads0 = tape.gradient(loss_0, critic_q0.trainable_variables)
-            optimizer_critic_l0.apply_gradients(zip(grads0, critic_q0.trainable_variables))
-        train_loss_l0(loss_0)
-
-        #### obtain the components for the chain for the update of \pi( h_0 = nada!) = \beta
-        with tf.GradientTape() as tape:
-            actions = actor_q0(np.expand_dims(np.zeros(len(experiences)),axis=1))
-            tape.watch(actions)
-            qvals = critic_q0(actions)
-            dq_da = tape.gradient(qvals, actions)
-
-        ### update actor \pi( h_0) = \beta
-        with tf.GradientTape() as tape:
-            actions = actor_q0(np.expand_dims(np.zeros(len(experiences)),axis=1))
-            da_dtheta = tape.gradient(actions, actor_q0.trainable_variables, output_gradients=-dq_da)
-            optimizer_actor_l0.apply_gradients(zip(da_dtheta, actor_q0.trainable_variables))
-    return
+experiences= np.load("experiences.npy")
+critic = Critic()
+b, rews = critic.process_sequence_tf(experiences)
+critic.give_td_error_Kennedy_guess_tf(b, rews)

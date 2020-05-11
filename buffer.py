@@ -44,7 +44,7 @@ class ReplayBuffer():
         else:
             batch = random.sample(self.buffer, int(batch_size))
         beta_batch, outcome_batch, guess_batch, r_batch= list(map(np.array, list(zip(*batch))))
-        return np.array([beta_batch, outcome_batch, guess_batch, r_batch]).transpose()
+        return np.array([beta_batch, outcome_batch, guess_batch, r_batch]).transpose().astype(np.float32)
 
     def clear(self):
         self.buffer.clear()
