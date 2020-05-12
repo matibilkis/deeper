@@ -176,13 +176,13 @@ class Critic(tf.keras.Model):
     #     return batched_zeroed_reward
 
 
-    def give_favourite_guess(self,sequence_with_minus):
+    def give_favourite_guess(self,sequence_with_plus):
         """"
             important !! the 1!
         sequence should be [[beta, pad], [outcome, 1]] """
-        pred_1 = self(sequence_with_minus)
-        sequence_with_minus[:,1][:,1] = -sequence_with_minus[:,1][:,1]
-        pred_2 = self(sequence_with_minus)
+        pred_1 = self(sequence_with_plus)
+        sequence_with_plus[:,1][:,1] = -sequence_with_plus[:,1][:,1]
+        pred_2 = self(sequence_with_plus)
         both = tf.concat([pred_1,pred_2],2)
         maxs = np.squeeze(tf.argmax(both,axis=2).numpy())[1]
 

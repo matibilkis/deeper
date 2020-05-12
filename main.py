@@ -47,7 +47,7 @@ def optimization_step(experiences,critic, critic_target, actor, optimizer_critic
     ###### END OF OPTIMIZATION STEP ######
 
 
-def ddpgKennedy(special_name="",total_episodes = 10**3,buffer_size=500, batch_size=64, ep_guess=0.01,
+def ddpgKennedy(special_name="",total_episodes = 10**3,buffer_size=500, batch_size=64, ep_guess=0.1,
  noise_displacement=0.5,lr_actor=0.01, lr_critic=0.001, tau=0.005, repetitions=1, plots=True):
 
     if not os.path.exists("results"):
@@ -56,7 +56,7 @@ def ddpgKennedy(special_name="",total_episodes = 10**3,buffer_size=500, batch_si
     amplitude = 0.4
     buffer = ReplayBuffer(buffer_size=buffer_size)
 
-    critic = Critic(valreg=0.1)
+    critic = Critic(valreg=0.01)
     critic_target = Critic()
     actor = Actor(input_dim=1)
     # actor_target = Actor(input_dim=1) THIS IS NOT REQUIRED FOR THE FIRST LAYER ONLY
@@ -115,7 +115,7 @@ def ddpgKennedy(special_name="",total_episodes = 10**3,buffer_size=500, batch_si
         alice_phase = np.random.choice([-1.,1.],1)[0]
         beta_would_do = actor(np.array([[0.]])).numpy()[0][0]
         beta =  beta_would_do + np.random.uniform(-noise_displacement, noise_displacement)
-        proboutcome = Prob(alice_phase*amplitude,beta,0)
+        proboutcome = Prob(alice_phase*amplitude,beta,0.)
         outcome = np.random.choice([0.,1.],1,p=[proboutcome, 1-proboutcome])[0]
 
         history_betas.append(beta)
@@ -125,8 +125,7 @@ def ddpgKennedy(special_name="",total_episodes = 10**3,buffer_size=500, batch_si
         if np.random.random()< ep_guess:
             guess = np.random.choice([-1.,1.],1)[0]
         else:
-            sequence = np.array([[ [beta, critic.pad_value], [outcome, -1.]]  ]).astype(np.float32)
-            guess = critic.give_favourite_guess(sequence)
+            guess = critic.give_favourite_guess(critic.pad_single_sequence([beta, outcome, 1.]))
         if guess == alice_phase:
             reward = 1.
         else:
@@ -138,8 +137,8 @@ def ddpgKennedy(special_name="",total_episodes = 10**3,buffer_size=500, batch_si
         ###### OPTIMIZATION STEP ######
         ###### OPTIMIZATION STEP ######
 
-        experiences = buffer.sample(batch_size)
         if buffer.count>1:
+            experiences = buffer.sample(batch_size)
             optimization_step(experiences,critic, critic_target, actor, optimizer_critic, optimizer_actor, train_loss)
             critic_target.update_target_parameters(critic, tau=tau)
 
@@ -209,14 +208,14 @@ if __name__ == "__main__":
     info_run = ""
     to_csv=[]
     for tau in [0.05]:
-        for lr_critic in [0.01]:
+        for lr_critic in [0.0005]:
             for noise_displacement in [1.]:
-                for batch_size in [64., 128.]:
+                for batch_size in [64. ]:
 
                     # name_run = datetime.now().strftime("%m-%d-%H-%-M%-S")
 
-                    name_run = ddpgKennedy(total_episodes=1000, noise_displacement=noise_displacement, tau=tau,
-                    buffer_size=2*10**6, batch_size=batch_size, lr_critic=lr_critic, lr_actor=0.01, plots=True)
+                    name_run = ddpgKennedy(total_episodes=2000, noise_displacement=noise_displacement, tau=tau,
+                    buffer_size=2*10**6, batch_size=batch_size, lr_critic=lr_critic, lr_actor=0.001, plots=True)
 
                     info_run +="***\n***\nname_run: {} ***\ntau: {}\nlr_critic: {}\nnoise_displacement: {}\nbatch_size: {}\n-------\n-------\n\n".format(name_run,tau, lr_critic, noise_displacement, batch_size)
 
