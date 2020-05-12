@@ -8,7 +8,7 @@ tf.executing_eagerly()
 
 class Critic(tf.keras.Model):
     #input_dim: 1 if layer=0, 3 if layer= 2, for the Kennedy receiver ##
-    def __init__(self, valreg=0.01, seed_val=0.1, pad_value=-7.):
+    def __init__(self, valreg=0.01, seed_val=0.3, pad_value=-7.):
         super(Critic,self).__init__()
 
         self.pad_value = pad_value
@@ -55,10 +55,10 @@ class Critic(tf.keras.Model):
         feat = self.mask(inputs)
 
         feat= self.lstm(feat)
-        feat = tf.nn.dropout(feat, rate=0.01)
+        # feat = tf.nn.dropout(feat, rate=0.01)
 
         feat = tf.nn.relu(self.l1(feat))
-        feat = tf.nn.dropout(feat, rate=0.01)
+        # feat = tf.nn.dropout(feat, rate=0.01)
 
         feat = tf.nn.relu(self.l2(feat))
         feat = tf.nn.relu(self.l3(feat))
@@ -97,22 +97,19 @@ class Critic(tf.keras.Model):
         return padded_data, rewards_obtained
 
 
-
-
-
-
-    @tf.function
-    def process_sequence_tf(self, sample_buffer, LAYERS=1):
-        sample_buffer = tf.convert_to_tensor(sample_buffer)
-        first = tf.stack([sample_buffer[:,0], self.pad_value*tf.ones((sample_buffer.shape[0]))], axis=-1)
-        for k in range(1,LAYERS+1):
-            to_stack = tf.stack([sample_buffer[:,k], sample_buffer[:,k+1]], axis=-1)
-            first = tf.stack([first, to_stack], axis=1)
-
-        rewards = tf.zeros((sample_buffer.shape[0]))
-        rewards = tf.stack([rewards,sample_buffer[:,-1]], axis=-1)
-        rewards = tf.expand_dims(rewards, axis=2)
-        return first, rewards
+    #
+    # @tf.function
+    # def process_sequence_tf(self, sample_buffer, LAYERS=1):
+    #     sample_buffer = tf.convert_to_tensor(sample_buffer)
+    #     first = tf.stack([sample_buffer[:,0], self.pad_value*tf.ones((sample_buffer.shape[0]))], axis=-1)
+    #     for k in range(1,LAYERS+1):
+    #         to_stack = tf.stack([sample_buffer[:,k], sample_buffer[:,k+1]], axis=-1)
+    #         first = tf.stack([first, to_stack], axis=1)
+    #
+    #     rewards = tf.zeros((sample_buffer.shape[0]))
+    #     rewards = tf.stack([rewards,sample_buffer[:,-1]], axis=-1)
+    #     rewards = tf.expand_dims(rewards, axis=2)
+    #     return first, rewards
 
     def pad_single_sequence(self, seq, LAYERS=1):
         """"
@@ -122,7 +119,6 @@ class Critic(tf.keras.Model):
 
         the cool thing is that then you can put this to predict the greedy guess/action.
         """
-        pad_value = -4.
         padded_data = np.ones((1,LAYERS+1, 2))*self.pad_value
         padded_data[0][0][0] = seq[0]
         #padded_data[0][0] = data[0]
@@ -156,39 +152,42 @@ class Critic(tf.keras.Model):
         preds1 = self(b)
         b[:,1][:,1] = -b[:,1][:,1]
         preds2 = self(b)
-        both = tf.concat([preds1,preds2],1)
-        maxs = np.squeeze(tf.math.reduce_max(both,axis=1).numpy())
-        ll[:,0] = maxs + ll[:,0]
+        both = tf.concat([preds1,preds2],2)
+        maxs = np.squeeze(tf.math.reduce_max(both,axis=2).numpy())
+        ll[:,0] = maxs[:,1] + ll[:,0]
         ll = np.expand_dims(ll,axis=1)
         return ll
 
+    #
+    #
+    # @tf.function
+    # def give_td_error_Kennedy_guess_tf(self,batched_input,batched_zeroed_reward):
+    #     preds1 = self(batched_input)
+    #
+    #     Level1 = tf.unstack(batched_input, axis=1)
+    #     pad, guess = tf.unstack(Level1[1], axis=1)
+    #     new_guess = tf.multiply(guess,-1)
+    #     flipped_guess = tf.stack([Level1[0],tf.stack([pad, new_guess], axis=1)], axis=2)
+    #
+    #     preds2 = self(flipped_guess)
+    #     both = tf.concat([preds1,preds2],1)
+    #         maxs = tf.math.reduce_max(both,axis=1)
+    #     batched_zeroed_reward = tf.stack([maxs, batched_zeroed_reward[:,1] ], axis=1)
+    #     return batched_zeroed_reward
 
-    @tf.function
-    def give_td_error_Kennedy_guess_tf(self,batched_input,batched_zeroed_reward):
-        preds1 = self(batched_input)
 
-        Level1 = tf.unstack(batched_input, axis=1)
-        pad, guess = tf.unstack(Level1[1], axis=1)
-        new_guess = tf.multiply(guess,-1)
-        flipped_guess = tf.stack([Level1[0],tf.stack([pad, new_guess], axis=1)], axis=2)
+    def give_favourite_guess(self,sequence_with_minus):
+        """"
+            important !! the 1!
+        sequence should be [[beta, pad], [outcome, 1]] """
+        pred_1 = self(sequence_with_minus)
+        sequence_with_minus[:,1][:,1] = -sequence_with_minus[:,1][:,1]
+        pred_2 = self(sequence_with_minus)
+        both = tf.concat([pred_1,pred_2],2)
+        maxs = np.squeeze(tf.argmax(both,axis=2).numpy())[1]
 
-        preds2 = self(flipped_guess)
-        both = tf.concat([preds1,preds2],1)
-        maxs = tf.math.reduce_max(both,axis=1)
-        batched_zeroed_reward = tf.stack([maxs, batched_zeroed_reward[:,1] ], axis=1)
-        return batched_zeroed_reward
-
-
-    def give_favourite_guess(self,sequence):
-        """"sequence should be [[beta, pad], [outcome, guess]] """
-        pred_1 = self(sequence)
-        sequence[:,1][:,1] = -sequence[:,1][:,1]
-        pred_2 = self(sequence)
-        both = tf.concat([pred_1,pred_2],1)
-        maxs = tf.argmax(both,axis=1)
-        guess = (-1)**maxs.numpy()[0][0]
-        return guess
-
+        guess = (-1)**maxs
+        return  guess
 
 
 ##### ACTOR CLASSS ####

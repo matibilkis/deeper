@@ -56,7 +56,7 @@ def ddpgKennedy(special_name="",total_episodes = 10**3,buffer_size=500, batch_si
     amplitude = 0.4
     buffer = ReplayBuffer(buffer_size=buffer_size)
 
-    critic = Critic(valreg=0.05)
+    critic = Critic(valreg=0.1)
     critic_target = Critic()
     actor = Actor(input_dim=1)
     # actor_target = Actor(input_dim=1) THIS IS NOT REQUIRED FOR THE FIRST LAYER ONLY
@@ -127,11 +127,11 @@ def ddpgKennedy(special_name="",total_episodes = 10**3,buffer_size=500, batch_si
         else:
             sequence = np.array([[ [beta, critic.pad_value], [outcome, -1.]]  ]).astype(np.float32)
             guess = critic.give_favourite_guess(sequence)
-        # if guess == alice_phase:
-        #     reward = 1.
-        # else:
-        #     reward = 0.
-        reward = qval(beta, outcome, guess)
+        if guess == alice_phase:
+            reward = 1.
+        else:
+            reward = 0.
+        # reward = qval(beta, outcome, guess)
         buffer.add(beta, outcome, guess, reward)
 
 
@@ -139,8 +139,9 @@ def ddpgKennedy(special_name="",total_episodes = 10**3,buffer_size=500, batch_si
         ###### OPTIMIZATION STEP ######
 
         experiences = buffer.sample(batch_size)
-        optimization_step(experiences,critic, critic_target, actor, optimizer_critic, optimizer_actor, train_loss)
-        critic_target.update_target_parameters(critic, tau=0.05)
+        if buffer.count>1:
+            optimization_step(experiences,critic, critic_target, actor, optimizer_critic, optimizer_actor, train_loss)
+            critic_target.update_target_parameters(critic, tau=tau)
 
 
 #####
@@ -155,7 +156,9 @@ def ddpgKennedy(special_name="",total_episodes = 10**3,buffer_size=500, batch_si
         ### calculate success probability if the agent went greedy ###########
         p=0
         for outcome in [0.,1.]:
-            p+=Prob(critic.give_favourite_guess(critic.pad_single_sequence([beta_would_do, outcome, -1.]))*amplitude, beta_would_do,outcome)
+            guess = critic.give_favourite_guess(critic.pad_single_sequence([beta_would_do, outcome, 1.]))
+            # print(guess, outcome)
+            p+=Prob(guess*amplitude, beta_would_do,outcome) #Notice it's very very important that the sequence has the 1. and not -1!!! TO DO in a better way!
         p/=2
         pt.append(p)
         ################
@@ -205,15 +208,15 @@ def ddpgKennedy(special_name="",total_episodes = 10**3,buffer_size=500, batch_si
 if __name__ == "__main__":
     info_run = ""
     to_csv=[]
-    for tau in [0.005]:
-        for lr_critic in [0.0005]:
-            for noise_displacement in [.5]:
-                for batch_size in [64.]:
+    for tau in [0.05]:
+        for lr_critic in [0.01]:
+            for noise_displacement in [1.]:
+                for batch_size in [64., 128.]:
 
                     # name_run = datetime.now().strftime("%m-%d-%H-%-M%-S")
 
-                    name_run = ddpgKennedy(total_episodes=2000, noise_displacement=noise_displacement, tau=tau,
-                    buffer_size=2*10**6, batch_size=batch_size, lr_critic=lr_critic, lr_actor=0.001, plots=True)
+                    name_run = ddpgKennedy(total_episodes=1000, noise_displacement=noise_displacement, tau=tau,
+                    buffer_size=2*10**6, batch_size=batch_size, lr_critic=lr_critic, lr_actor=0.01, plots=True)
 
                     info_run +="***\n***\nname_run: {} ***\ntau: {}\nlr_critic: {}\nnoise_displacement: {}\nbatch_size: {}\n-------\n-------\n\n".format(name_run,tau, lr_critic, noise_displacement, batch_size)
 
