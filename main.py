@@ -207,10 +207,10 @@ def ddpgKennedy(special_name="",total_episodes = 10**3,buffer_size=500, batch_si
 if __name__ == "__main__":
     info_run = ""
     to_csv=[]
-    for tau in [0.05, 0.01, 0.001]:
-        for lr_critic in [0.0005, 0.01]:
-            for noise_displacement in [1.]:
-                for batch_size in [64. ]:
+    for tau in [.5, 0.05]:
+        for lr_critic in [0.0001]:
+            for noise_displacement in [.5, .25, .1]:
+                for batch_size in [ 64., 128.]:
 
                     # name_run = datetime.now().strftime("%m-%d-%H-%-M%-S")
 
