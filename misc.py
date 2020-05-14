@@ -14,29 +14,51 @@ import matplotlib
 
 
 
-#### this is the outcome probability, given by the overlap <0|\alpha - \beta>|¨^{2}
-def Prob(alpha, beta, n):
-    p0 = np.exp(-(alpha-beta)**2)
-    if n == 0:
+
+def P(a,b,et,n):
+
+    p0=np.exp(-abs((et*a)+b)**2)
+
+    if n ==0:
         return p0
     else:
-        return 1-p0
+        return 1-(p0)
 
-### this is just p(R=1 | g, n; beta) = p((-1^{g} alpha | n)) = p(n|allpha) pr(alpha)(p(n))
-def qval(beta, n, guess):
-    #dolinar guessing rule (= max-likelihood for L=1, careful sign of \beta)
-    alpha = 0.4
-    pn = np.sum([Prob(g*alpha, beta, n) for g in [-1,1]])
-    return Prob(guess*alpha, beta, n)/pn
+def outcomes_universe(L):
+    """
+    Takes L (# of photodetections in the experiment) and returns
+    all possible outcomes in a matrix of 2**L rows by L columns,
+    which are all possible sequence of outcomes you can ever get.
+    """
+    a = np.array([0,1])
+    two_outcomes = np.array([[0,0],[0,1],[1,0],[1,1]]).astype(int)
+    if L<2:
+        return np.array([0,1]).astype(int)
+    elif L==2:
+        return two_outcomes
+    else:
+        x = insert(a,two_outcomes)
+        for i in range(L-3):
+            x = insert(a,x)
+        return x.astype(int)
 
-def ps_maxlik(beta):
-    #dolinar guessing rule (= max-likelihood for L=1, careful sign of \beta)
-    alpha = 0.4
+def make_attenuations(layers):
+    if layers == 1:
+        return [0]
+    else:
+        ats=[0]
+        for i in range(layers-1):
+            ats.append(np.arctan(1/np.cos(ats[i])))
+        return np.flip(ats)
+
+
+def prob_2L(actions_tree, at): #
+    #at = make_attenuations(2)
     p=0
-    for n1 in [0,1]:
-       p+=Prob(np.sign(beta)*(-1)**(n1)*alpha, beta, n1)
+    for ot in outcomes_universe(2):
+        p += P(actions_tree["2"][str(ot[:2])]*0.4, actions_tree["0"]["[]"], np.sin(at[0]), ot[0])*P(actions_tree["2"][str(ot[:2])]*0.4,
+                                                                                                    actions_tree["1"][str(ot[:1])], np.cos(at[0]), ot[1])
     return p/2
-
 
 def record():
     if not os.path.exists("results/number_rune.txt"):
@@ -54,8 +76,8 @@ def record():
             f.write(str(int(a)+1))
             f.close()
         number_run = int(a)+1
-    # if not os.path.exists("run_"+str(number_run)):
-    #     os.makedirs("results/run_"+str(number_run))
+    if not os.path.exists("run_"+str(number_run)):
+        os.makedirs("results/run_"+str(number_run))
     #
     # if not os.path.exists("results/run_"+str(number_run)+"/models"):
     #     os.makedirs("results/run_"+str(number_run)+"/models")
@@ -65,6 +87,21 @@ def record():
 
 
 
+
+# ### this is just p(R=1 | g, n; beta) = p((-1^{g} alpha | n)) = p(n|allpha) pr(alpha)(p(n))
+# def qval(beta, n, guess):
+#     #dolinar guessing rule (= max-likelihood for L=1, careful sign of \beta)
+#     alpha = 0.4
+#     pn = np.sum([Prob(g*alpha, beta, n) for g in [-1,1]])
+#     return Prob(guess*alpha, beta, n)/pn
+#
+# def ps_maxlik(beta):
+#     #dolinar guessing rule (= max-likelihood for L=1, careful sign of \beta)
+#     alpha = 0.4
+#     p=0
+#     for n1 in [0,1]:
+#        p+=Prob(np.sign(beta)*(-1)**(n1)*alpha, beta, n1)
+#     return p/2
 
 
 #
