@@ -79,6 +79,9 @@ def record():
         number_run = int(a)+1
     if not os.path.exists("run_"+str(number_run)):
         os.makedirs("results/run_"+str(number_run))
+        for net in ["actor_primary", "actor_target", "critic_primary", "critic_target"]:
+            os.makedirs("results/run_"+str(number_run)+"/networks/"+net)
+
     #
     # if not os.path.exists("results/run_"+str(number_run)+"/models"):
     #     os.makedirs("results/run_"+str(number_run)+"/models")

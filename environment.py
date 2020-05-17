@@ -30,7 +30,7 @@ class Environment(basics.Basics):
     def lambda_q(self,q):
         """Auxiliary method to compute pretty good measurement bound (helstrom in this case, see Holevo book)"""
         number_states = self.number_phases
-        nsig = self.mean**2 #in case you change...
+        nsig = self.amplitude**2 #in case you change...
         c=0
         for m in range(1,number_states+1):
             c+= np.exp(((1-q)*(2*np.pi*(1j)*m)/number_states) + nsig*np.exp(2*np.pi*(1j)*m/number_states))
@@ -46,7 +46,7 @@ class Environment(basics.Basics):
         if self.layers ==1:
             return 1-np.min(self.err_kennedy(self.actions[0]))
 
-        nsig=self.mean**2
+        nsig=self.amplitude**2
         number_states=self.number_phases
 
         prob = 0

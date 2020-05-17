@@ -11,7 +11,7 @@ from datetime import datetime
 import random
 import matplotlib
 from environment import Environment
-
+from plots import just_plot
 # from plots import *
 from misc import *
 from nets import *
@@ -48,7 +48,7 @@ def optimization_step(experiences, critic, critic_target, actor, actor_target, o
                 ac = tf.convert_to_tensor(np.reshape(experiences[:,ind], (len(experiences),1,1)))
                 actions_indexed[act_ind] = ac
                 act_ind+=1
-        
+
         actions_indexed = tf.concat(actions_indexed,axis=1)
         tape.watch(actions_indexed) ####watch the ations
 
@@ -116,10 +116,9 @@ def ddpgKennedy(special_name="", dolinar_layers=2, number_phases=2, total_episod
         ##### STORING FOLDER ####
             ##### STORING FOLDER ####
     numb = record()
-    current_run_and_time ="results/run_" + str(numb)
+    directory ="results/run_" + str(numb)
 
 
-    directory = current_run_and_time
     info_optimizers = "optimizer_critic_guess: {} \nOptimizer_actor_l0: {}\n".format(optimizer_critic.get_config(), optimizer_actor.get_config())
     infor_buffer = "Buffer_size: {}\n Batch_size for sampling: {}\n".format(buffer.buffer_size, batch_size)
     info_epsilons= "epsilon-guess: {}\nepsilon_displacement_noise: {}".format(ep_guess,noise_displacement)
@@ -158,7 +157,6 @@ def ddpgKennedy(special_name="", dolinar_layers=2, number_phases=2, total_episod
         experiences=[] #where the current history of the current episode is stored
         context_outcome_actor = np.reshape(np.array([actor.pad_value]),(1,1,1)).astype(np.float32)
         for layer in range(actor.dolinar_layers):
-            print(layer)
             beta_would_do = np.squeeze(actor(context_outcome_actor))
             beta =  beta_would_do + np.random.uniform(-noise_displacement, noise_displacement)
             outcome = env.give_outcome(beta,layer)
@@ -183,7 +181,7 @@ def ddpgKennedy(special_name="", dolinar_layers=2, number_phases=2, total_episod
         ###### OPTIMIZATION STEP ######
         ###### OPTIMIZATION STEP ######
 
-        if buffer.count>1:
+        if (buffer.count>100)&(episode%100==0):
             sampled_experiences = buffer.sample(batch_size)
             new_loss = optimization_step(sampled_experiences, critic, critic_target, actor, actor_target, optimizer_critic, optimizer_actor)
             critic_target.update_target_parameters(critic)
@@ -243,7 +241,9 @@ def ddpgKennedy(special_name="", dolinar_layers=2, number_phases=2, total_episod
     rt = rt/np.arange(1,len(rt)+1)
 
     # losses = [avg_train, avg_test]
-
+    for model, net_folder in zip([actor, actor_target, critic, critic_target],["actor_primary", "actor_target", "critic_primary", "critic_target"]):
+        model.save_weights(directory+"/networks/"+net_folder+"/")
+    just_plot(rt, env.helstrom(), directory)
     # BigPlot(buffer,rt, pt, history_betas, history_betas_would_have_done, histo_preds, losses, directory)
     return
 
@@ -258,7 +258,7 @@ if __name__ == "__main__":
     batch_size = 128
     ep_guess=0.01
 
-    name_run = ddpgKennedy(total_episodes=2000, dolinar_layers=2, noise_displacement=noise_displacement, tau=tau,
+    name_run = ddpgKennedy(total_episodes=10**6, dolinar_layers=2, noise_displacement=noise_displacement, tau=tau,
     buffer_size=2*10**6, batch_size=batch_size, lr_critic=lr_critic, lr_actor=lr_actor, ep_guess=ep_guess)
 
     info_run +="***\n***\nname_run: {} ***\ntau: {}\nlr_critic: {}\nnoise_displacement: {}\nbatch_size: {}\n-------\n-------\n\n".format(name_run,tau, lr_critic, noise_displacement, batch_size)
