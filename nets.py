@@ -90,20 +90,20 @@ class Critic(tf.keras.Model):
         return rr, rewards_obtained
 
 
-    def pad_single_sequence(self, seq):
-        """"
-        input: [a0, o1, a1, o2, a2, o3, a4]
-
-        output: [[a0, pad], [o1, a1], [...]]
-
-        the cool thing is that then you can put this to predict the greedy guess/action.
-        """
-        padded_data = np.ones((1,self.dolinar_layers+1, 2))*self.pad_value
-        padded_data[0][0][0] = seq[0]
-        #padded_data[0][0] = data[0]
-        for k in range(1,self.dolinar_layers+1):
-            padded_data[0][k] = seq[k:(k+2)]
-        return padded_data
+    # def pad_single_sequence(self, seq):
+    #     """"
+    #     input: [a0, o1, a1, o2, a2, o3, a4]
+    #
+    #     output: [[a0, pad], [o1, a1], [...]]
+    #
+    #     the cool thing is that then you can put this to predict the greedy guess/action.
+    #     """
+    #     padded_data = np.ones((1,self.dolinar_layers+1, 2))*self.pad_value
+    #     padded_data[0][0][0] = seq[0]
+    #     #padded_data[0][0] = data[0]
+    #     for k in range(1,self.dolinar_layers+1):
+    #         padded_data[0][k] = seq[k:(k+2)]
+    #     return padded_data
 
     def give_td_error_Kennedy_guess(self,batched_input,sequential_rews_with_zeros):
         # this function takes as input the actions as given by the target actor (but the first one!)
@@ -118,15 +118,16 @@ class Critic(tf.keras.Model):
         for k in range(self.dolinar_layers):
             ll[:,k] = np.squeeze(self(b))[:,k+1] + ll[:,k]
 
-        preds1 = self(b)
-        b[:,-1][:,-1] = -b[:,1][:,1]
-        preds2 = self(b)
-        both = tf.concat([preds1,preds2],2)
-        maxs = np.squeeze(tf.math.reduce_max(both,axis=2).numpy())
-        ll[:,-2] = maxs[:,-1] # This is the last befre the guess.. so the label is max_g Q(h-L, g)
+        b[:,-1][:,-1] = 0.
+        all_preds = self(b)
+        for phase in np.arange(1,self.number_phases)/self.number_phases:
+            b[:,-1][:,-1] = phase
+            all_preds = tf.concat([all_preds,self(b)],2)
+
+        maxs = np.squeeze(tf.math.reduce_max(all_preds,axis=2).numpy())
+        ll[:,-2] = maxs[:,-1] # This is the last befre the guess. So the label is max_g Q(h-L, g)
         ll = np.expand_dims(ll,axis=1)
         return ll
-
 
     def give_favourite_guess(self,hL):
         """

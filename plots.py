@@ -3,19 +3,28 @@ import matplotlib.pyplot as plt
 import numpy as np
 # from misc import Prob, ps_maxlik, qval
 
-def just_plot(rt, pt, helstrom, directory):
+def just_plot(rt, pt, avg_train, helstrom, directory):
     matplotlib.rc('font', serif='cm10')
     plt.rcParams.update({'font.size': 40})
-    plt.figure(figsize=(60,60), dpi=100)
-    ax1=plt.subplot2grid((1,1),(0,0))
+    plt.figure(figsize=(60,60), dpi=150)
+    ax1=plt.subplot2grid((1,2),(0,0))
+    ax2=plt.subplot2grid((1,2),(0,1))
 
     T=len(rt)
     ax1.plot(np.log10(np.arange(1,T+1)),rt, color="red", linewidth=15, alpha=0.8, label=r'$R_t$')
     ax1.plot(np.log10(np.arange(1,T+1)),helstrom*np.ones(T), color="black",  linewidth=15,alpha=0.5, label="Helstrom Bound")
     ax1.plot(np.log10(np.arange(1,T+1)),pt, color="blue", linewidth=15, alpha=0.8, label=r'$P_t$')
 
-    for ax in [ax1]:
+    ax2.plot(np.arange(1,len(avg_train)+1),avg_train, color="black", linewidth=15, alpha=0.8, label="Critic's loss")
+
+    for ax in [ax1, ax2]:
         ax.legend()
+
+    ax1.set_xticks(range(int(np.log10(len(rt)))))
+    tticks=[]
+    for k in range(int(np.log10(len(rt)))):
+        tticks.append("10^"+str(k))
+    ax1.set_xticklabels(tticks)
 
     #plt.tight_layout()
     plt.savefig(directory+"/learning_plot.png")

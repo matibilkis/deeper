@@ -40,7 +40,7 @@ class Environment(misc.Basics):
         Eq (9) M-ary-state phase-shift-keying discrimination below the homodyne limit
         F. E. Becerra,1,* J. Fan,1 G. Baumgartner,2 S. V. Polyakov,1 J. Goldhar,3 J. T. Kosloski,4 and A. Migdall1
         """
-        if self.layers ==1:
+        if self.dolinar_layers ==1:
             return 1-np.min(self.err_kennedy(self.actions[0]))
 
         nsig=self.amplitude**2

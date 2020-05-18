@@ -90,7 +90,7 @@ def ddpgKennedy(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=
     if not os.path.exists("results"):
         os.makedirs("results")
 
-    env = Environment(amplitude=amplitude, dolinar_layers = dolinar_layers)
+    env = Environment(amplitude=amplitude, dolinar_layers = dolinar_layers, number_phases=number_phases)
     buffer = ReplayBuffer(buffer_size=buffer_size)
 
     critic = Critic(nature="primary",valreg=0.01, dolinar_layers = dolinar_layers, number_phases=number_phases)
@@ -99,7 +99,7 @@ def ddpgKennedy(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=
     actor_target = Actor(nature="target", dolinar_layers = dolinar_layers)
 
     optimizer_critic = tf.keras.optimizers.Adam(lr=lr_critic)
-    optimizer_actor = tf.keras.optimizers.Adam(lr=lr_actor) #0.001 works well
+    optimizer_actor = tf.keras.optimizers.Adam(lr=lr_actor)
 
     policy_evaluator = PolicyEvaluator(amplitude = amplitude, dolinar_layers=dolinar_layers, number_phases = number_phases)
 
@@ -149,17 +149,16 @@ def ddpgKennedy(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=
         context_outcome_actor = np.reshape(np.array([actor.pad_value]),(1,1,1)).astype(np.float32)
         for layer in range(actor.dolinar_layers):
             beta_would_do = np.squeeze(actor(context_outcome_actor))
-            beta =  beta_would_do + np.random.uniform(-noise_displacement, noise_displacement)
+            beta =  np.clip(beta_would_do + np.random.uniform(-noise_displacement, noise_displacement),-2*amplitude,2*amplitude)
             outcome = env.give_outcome(beta,layer)
             experiences.append(beta)
             experiences.append(outcome)
-
             context_outcome_actor = np.reshape(np.array([outcome]),(1,1,1)).astype(np.float32)
 
         ### ep-gredy guessing of the phase###
         ### ep-gredy guessing of the phase###
 
-        if np.random.random()< ep_guess:
+        if np.random.random()< 1:
             val = np.random.choice(range(number_phases),1)[0]
             guess_index, guess_input_network = val, val/critic.number_phases
         else:
@@ -180,7 +179,7 @@ def ddpgKennedy(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=
         ###### OPTIMIZATION STEP ######
         ###### OPTIMIZATION STEP ######
         ###### OPTIMIZATION STEP ######
-        if (buffer.count>1000)&(episode%100==0):
+        if (buffer.count>int(total_episodes/100))&(episode%100==1):
             sampled_experiences = buffer.sample(batch_size)
             new_loss = optimization_step(sampled_experiences, critic, critic_target, actor, actor_target, optimizer_critic, optimizer_actor)
             critic_target.update_target_parameters(critic)
@@ -217,7 +216,7 @@ def ddpgKennedy(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=
 
     for model, net_folder in zip([actor, actor_target, critic, critic_target],["actor_primary", "actor_target", "critic_primary", "critic_target"]):
         model.save_weights(directory+"/networks/"+net_folder+"/")
-    just_plot(rt, pt, env.helstrom(), directory)
+    just_plot(rrt, pt, avg_train, env.helstrom(), directory)
     # BigPlot(buffer,rt, pt, history_betas, history_betas_would_have_done, histo_preds, losses, directory)
     return
 
@@ -226,16 +225,18 @@ if __name__ == "__main__":
     info_run = ""
     to_csv=[]
     amplitude=0.4
-    tau = .05
-    lr_critic = 0.0001
-    lr_actor=0.001
-    noise_displacement = .5
-    batch_size = 128
+    tau = .1
+    lr_critic = 0.01
+    lr_actor=0.01
+    noise_displacement = .25
+    batch_size = 128.
     ep_guess=0.01
+    dolinar_layers=2
+    number_phases=2
 
 
-    name_run = ddpgKennedy(amplitude=amplitude, total_episodes=10, dolinar_layers=2, noise_displacement=noise_displacement, tau=tau,
-    buffer_size=10**3, batch_size=batch_size, lr_critic=lr_critic, lr_actor=lr_actor, ep_guess=ep_guess)
+    name_run = ddpgKennedy(amplitude=amplitude, total_episodes=10**5, dolinar_layers=dolinar_layers, noise_displacement=noise_displacement, tau=tau,
+    buffer_size=10**8, batch_size=batch_size, lr_critic=lr_critic, lr_actor=lr_actor, ep_guess=ep_guess)
 
     info_run +="***\n***\nname_run: {} ***\ntau: {}\nlr_critic: {}\nnoise_displacement: {}\nbatch_size: {}\n-------\n-------\n\n".format(name_run,tau, lr_critic, noise_displacement, batch_size)
 
