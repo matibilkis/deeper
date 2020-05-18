@@ -211,7 +211,7 @@ class Actor(tf.keras.Model):
         # feat = tf.nn.dropout(feat, rate=0.01)
         feat = tf.nn.relu(self.l2(feat))
         feat = tf.nn.relu(self.l3(feat))
-        feat = tf.nn.sigmoid(self.l4(feat))
+        feat = tf.nn.tanh(self.l4(feat))
 
         return feat
 

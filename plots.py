@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 # from misc import Prob, ps_maxlik, qval
 
-def just_plot(rt, helstrom, directory):
+def just_plot(rt, pt, helstrom, directory):
     matplotlib.rc('font', serif='cm10')
     plt.rcParams.update({'font.size': 40})
     plt.figure(figsize=(60,60), dpi=100)
@@ -12,12 +12,13 @@ def just_plot(rt, helstrom, directory):
     T=len(rt)
     ax1.plot(np.log10(np.arange(1,T+1)),rt, color="red", linewidth=15, alpha=0.8, label=r'$R_t$')
     ax1.plot(np.log10(np.arange(1,T+1)),helstrom*np.ones(T), color="black",  linewidth=15,alpha=0.5, label="Helstrom Bound")
+    ax1.plot(np.log10(np.arange(1,T+1)),pt, color="blue", linewidth=15, alpha=0.8, label=r'$P_t$')
 
     for ax in [ax1]:
         ax.legend()
 
     #plt.tight_layout()
-    plt.savefig(directory+"/rt_plot.png")
+    plt.savefig(directory+"/learning_plot.png")
     plt.close()
 
 def BigPlot(buffer, rt, pt, history_betas, history_betas_would_have_done, histo_preds, losses, directory):

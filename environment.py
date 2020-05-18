@@ -2,12 +2,11 @@ import misc
 import numpy as np
 import scipy.optimize as sp
 from tqdm import tqdm
-import basics
 import os
 import shutil
 import random
 
-class Environment(basics.Basics):
+class Environment(misc.Basics):
     """
 
     Environment class.  Despite this being slower, it is a proof of principle and ideally would be implemented in an optical table controlled by this software. See give_outcome_sf method.
@@ -18,12 +17,10 @@ class Environment(basics.Basics):
 
     """
 
-    def __init__(self, amplitude=.4, layers=2, number_phases=2):
-        super().__init__(amplitude=amplitude,layers=layers,
+    def __init__(self, amplitude=.4, dolinar_layers=2, number_phases=2):
+        super().__init__(amplitude=amplitude,dolinar_layers=dolinar_layers,
          number_phases=number_phases)
 
-        self.amplitude = amplitude
-        self.layers = layers
         self.pick_phase()
 
 

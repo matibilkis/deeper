@@ -12,7 +12,6 @@ import random
 import matplotlib
 from environment import Environment
 from plots import just_plot
-# from plots import *
 from misc import *
 from nets import *
 from buffer import ReplayBuffer
@@ -33,10 +32,6 @@ def optimization_step(experiences, critic, critic_target, actor, actor_target, o
         optimizer_critic.apply_gradients(zip(grads, critic.trainable_variables))
         loss_critic = np.squeeze(loss_critic.numpy())
     #
-    #
-    actor.lstm.reset_states()
-    actor.lstm.stateful=False ### this is because the mask has trouble with differing the batch_size
-
 
     actions_indexed = [0.]*(actor.dolinar_layers)
     with tf.GradientTape() as tape:
@@ -89,13 +84,13 @@ def optimization_step(experiences, critic, critic_target, actor, actor_target, o
 
 
 
-def ddpgKennedy(special_name="", dolinar_layers=2, number_phases=2, total_episodes = 10**3,buffer_size=500, batch_size=64, ep_guess=0.01,
+def ddpgKennedy(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, total_episodes = 10**3, buffer_size=500, batch_size=64, ep_guess=0.01,
  noise_displacement=0.5, lr_actor=0.01, lr_critic=0.001, tau=0.005):
 
     if not os.path.exists("results"):
         os.makedirs("results")
 
-    env = Environment(amplitude=0.4, layers = dolinar_layers)
+    env = Environment(amplitude=amplitude, dolinar_layers = dolinar_layers)
     buffer = ReplayBuffer(buffer_size=buffer_size)
 
     critic = Critic(nature="primary",valreg=0.01, dolinar_layers = dolinar_layers, number_phases=number_phases)
@@ -106,15 +101,15 @@ def ddpgKennedy(special_name="", dolinar_layers=2, number_phases=2, total_episod
     optimizer_critic = tf.keras.optimizers.Adam(lr=lr_critic)
     optimizer_actor = tf.keras.optimizers.Adam(lr=lr_actor) #0.001 works well
 
+    policy_evaluator = PolicyEvaluator(amplitude = amplitude, dolinar_layers=dolinar_layers, number_phases = number_phases)
 
     rt = []
     pt = []
     new_loss=0.
 
-
     ##### STORING FOLDER ####
-        ##### STORING FOLDER ####
-            ##### STORING FOLDER ####
+    ##### STORING FOLDER ####
+    ##### STORING FOLDER ####
     numb = record()
     directory ="results/run_" + str(numb)
 
@@ -134,12 +129,8 @@ def ddpgKennedy(special_name="", dolinar_layers=2, number_phases=2, total_episod
     print("saving results in " + str(directory))
     avg_train = []
     ##### STORING FOLDER ####
-        ##### STORING FOLDER ####
-            ##### STORING FOLDER ####
-
-    # history_betas = [] #to put in histogram
-    # history_betas_would_have_done={"first":{}, "second":{"[0,0]":[]}} #to put in histogram
-    # histo_preds = {"layer0":{}, "layer1":{}} #here i save the predictions to plot in a "straightforward way"
+    ##### STORING FOLDER ####
+    ##### STORING FOLDER ####
 
     actions = {}
     for layer in range(dolinar_layers+1):
@@ -166,6 +157,8 @@ def ddpgKennedy(special_name="", dolinar_layers=2, number_phases=2, total_episod
             context_outcome_actor = np.reshape(np.array([outcome]),(1,1,1)).astype(np.float32)
 
         ### ep-gredy guessing of the phase###
+        ### ep-gredy guessing of the phase###
+
         if np.random.random()< ep_guess:
             val = np.random.choice(range(number_phases),1)[0]
             guess_index, guess_input_network = val, val/critic.number_phases
@@ -175,34 +168,32 @@ def ddpgKennedy(special_name="", dolinar_layers=2, number_phases=2, total_episod
 
         reward = env.give_reward(guess_index)
         experiences.append(reward)
-        # # reward = qval(beta, outcome, guess)
         buffer.add(tuple(experiences))
 
-        ###### OPTIMIZATION STEP ######
-        ###### OPTIMIZATION STEP ######
+        actor.lstm.stateful=False
+        #actor.lstm.reset_states()
 
-        if (buffer.count>100)&(episode%100==0):
+        rt.append(reward)
+        pt.append(policy_evaluator.greedy_strategy(actor = actor, critic = critic))
+
+        ###### OPTIMIZATION STEP ######
+        ###### OPTIMIZATION STEP ######
+        ###### OPTIMIZATION STEP ######
+        ###### OPTIMIZATION STEP ######
+        if (buffer.count>1000)&(episode%100==0):
             sampled_experiences = buffer.sample(batch_size)
             new_loss = optimization_step(sampled_experiences, critic, critic_target, actor, actor_target, optimizer_critic, optimizer_actor)
             critic_target.update_target_parameters(critic)
             actor_target.update_target_parameters(actor)
-#####
+            noise_displacement = max(0.1,0.999*noise_displacement)
+        ###### OPTIMIZATION STEP ######
+        ###### OPTIMIZATION STEP ######
+        ###### OPTIMIZATION STEP ######
+        ###### OPTIMIZATION STEP ######
+
         avg_train.append(new_loss)
-        # avg_test.append(test_loss.result().numpy())
-    #
-        rt.append(reward)
-    #
-        # actor.lstm.reset_states()
-        ########################################################################
-        # ### calculate success probability if the agent went greedy ###########
-        # p=0
-        # for outcome in [0.,1.]:
-        #     guess = critic.give_favourite_guess(critic.pad_single_sequence([beta_would_do, outcome, 1.]))
-        #     # print(guess, outcome)
-        #     p+=Prob(guess*amplitude, beta_would_do,outcome) #Notice it's very very important that the sequence has the 1. and not -1!!! TO DO in a better way!
-        # p/=2
-        pt.append(0)
-        ################
+        #actor.lstm.reset_states()
+        actor.lstm.stateful=True
 
         if episode%(total_episodes/10) == 0: #this is for showing 10 results in total.
 
@@ -214,36 +205,19 @@ def ddpgKennedy(special_name="", dolinar_layers=2, number_phases=2, total_episod
                                 )
                   )
 
-            #
-            # for layer in ["layer0","layer1"]: #net_0 will be critic_q0, net_1 will be critic_qguess
-            #
-            #     histo_preds[layer][str(episode)] ={}
-            #     histo_preds[layer][str(episode)]["episode"] = episode
-            #     histo_preds[layer][str(episode)]["values"] = {}
-            #
-            # simp = np.random.randn(len(buffer.betas),4)
-            # simp[:,0] =buffer.betas
-            # qvals0 = np.squeeze(critic(critic.process_sequence(simp)[0]).numpy()[:,0])
-            # histo_preds["layer0"][str(episode)]["values"] = qvals0
-            #
-            # index=0
-            # for n1 in [0.,1.]:
-            #     for guess in [-1.,1.]:
-            #         simp[:,1] = n1
-            #         simp[:,2] = guess
-            #         qvals1 = np.squeeze(critic(critic.process_sequence(simp)[0]).numpy()[:,1])
-            #         histo_preds["layer1"][str(episode)]["values"][str(index)] = qvals1
-            #         index+=1
-            #
+    cumre=0
+    rrt = []
+    for k in rt:
+        cumre+=k
+        rrt.append(cumre)
+    rrt = rrt/np.arange(1,len(rt)+1)
 
+    np.save(directory+"/learning_curves/", rrt)
+    np.save(directory+"/learning_curves/", pt)
 
-    rt = [np.sum(rt[:k]) for k in range(len(rt))]
-    rt = rt/np.arange(1,len(rt)+1)
-
-    # losses = [avg_train, avg_test]
     for model, net_folder in zip([actor, actor_target, critic, critic_target],["actor_primary", "actor_target", "critic_primary", "critic_target"]):
         model.save_weights(directory+"/networks/"+net_folder+"/")
-    just_plot(rt, env.helstrom(), directory)
+    just_plot(rt, pt, env.helstrom(), directory)
     # BigPlot(buffer,rt, pt, history_betas, history_betas_would_have_done, histo_preds, losses, directory)
     return
 
@@ -251,6 +225,7 @@ def ddpgKennedy(special_name="", dolinar_layers=2, number_phases=2, total_episod
 if __name__ == "__main__":
     info_run = ""
     to_csv=[]
+    amplitude=0.4
     tau = .05
     lr_critic = 0.0001
     lr_actor=0.001
@@ -258,8 +233,9 @@ if __name__ == "__main__":
     batch_size = 128
     ep_guess=0.01
 
-    name_run = ddpgKennedy(total_episodes=10**6, dolinar_layers=2, noise_displacement=noise_displacement, tau=tau,
-    buffer_size=2*10**6, batch_size=batch_size, lr_critic=lr_critic, lr_actor=lr_actor, ep_guess=ep_guess)
+
+    name_run = ddpgKennedy(amplitude=amplitude, total_episodes=10, dolinar_layers=2, noise_displacement=noise_displacement, tau=tau,
+    buffer_size=10**3, batch_size=batch_size, lr_critic=lr_critic, lr_actor=lr_actor, ep_guess=ep_guess)
 
     info_run +="***\n***\nname_run: {} ***\ntau: {}\nlr_critic: {}\nnoise_displacement: {}\nbatch_size: {}\n-------\n-------\n\n".format(name_run,tau, lr_critic, noise_displacement, batch_size)
 

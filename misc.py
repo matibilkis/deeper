@@ -1,19 +1,8 @@
-import tensorflow as tf
-import pandas as pd
-from tensorflow.keras.layers import Dense
 import numpy as np
-import matplotlib.pyplot as plt
 import os
-from tqdm import tqdm as tqdm
-tf.keras.backend.set_floatx('float64')
-from collections import deque
-from datetime import datetime
 import random
-import matplotlib
 import cmath
-
-
-
+from math import erf
 
 
 def P(a,b,et,n):
@@ -25,6 +14,40 @@ def P(a,b,et,n):
     else:
         return 1-(p0)
 
+def insert(v,M):
+    """
+    Takes v, M and returns an array that has, for each element of v, a matrix M
+
+    Example:
+    x = [x0,x1]
+    y = [[0,0],[0,1],[1,0],[1,1]]
+    insert(x,y) returns
+
+    [x0 0 0]
+    [x0 0 1]
+    [x0 1 0]
+    [x0 1 1]
+    [x1 0 0]
+    [x1 0 1]
+    [x1 1 0]
+    [x1 1 1]
+    """
+    try:
+        a=M.shape
+        if len(a)<2:
+            a.append(1)
+    except Exception:
+         a = [1,len(M)]
+    result=np.zeros((a[0]*len(v),a[1] +1 )).astype(int)
+
+    f = len(v)+1
+    cucu=0
+    for k in v:
+        result[cucu:(cucu+a[0]),0] = k
+        result[cucu:(cucu+a[0]),1:] = M
+        cucu+=a[0]
+    return result
+
 def outcomes_universe(L):
     """
     Takes L (# of photodetections in the experiment) and returns
@@ -34,7 +57,7 @@ def outcomes_universe(L):
     a = np.array([0,1])
     two_outcomes = np.array([[0,0],[0,1],[1,0],[1,1]]).astype(int)
     if L<2:
-        return np.array([0,1]).astype(int)
+        return np.array([[0],[1]]).astype(int)
     elif L==2:
         return two_outcomes
     else:
@@ -53,13 +76,135 @@ def make_attenuations(layers):
         return np.flip(ats)
 
 
-def prob_2L(actions_tree, at): #
-    #at = make_attenuations(2)
-    p=0
-    for ot in outcomes_universe(2):
-        p += P(actions_tree["2"][str(ot[:2])]*0.4, actions_tree["0"]["[]"], np.sin(at[0]), ot[0])*P(actions_tree["2"][str(ot[:2])]*0.4,
-                                                                                                    actions_tree["1"][str(ot[:1])], np.cos(at[0]), ot[1])
-    return p/2
+class Basics():
+
+    """
+    A class that defines some common things inherited by Environment and PolicyEvaluator
+
+    amplitude: alpha, sqrt(intensity of the coherent states)
+    layers: number of displacements/photodetectors
+    number_phases: how many states you want to discriminate among. Notice they will be aranged as sqrt of unity
+
+    """
+    def __init__(self, amplitude = 0.4, dolinar_layers=2, number_phases=2):
+
+        self.dolinar_layers = dolinar_layers
+        self.number_phases = number_phases
+        self.at = self.make_attenuations(self.dolinar_layers) #Bob uses this if she knows the model
+        self.amplitude = amplitude
+
+        self.possible_phases=[]
+        for k in croots(self.number_phases):
+            self.possible_phases.append(np.round(k,10))
+
+    def make_attenuations(self,layers):
+        if layers == 1:
+            return [0]
+        else:
+            ats=[0]
+            for i in range(layers-1):
+                ats.append(np.arctan(1/np.cos(ats[i])))
+            return np.flip(ats)
+
+    def P(self,a,b,et,n):
+        """
+        | < \beta | et* \alpha >|**2
+
+        Notice that the real phase is not considered here, and is multiplied externally, when the function is called, as
+        P(real_phase*a, beta, et, n)...
+
+        """
+        p0=np.exp(-abs((et*a)+b)**2)
+        if n ==0:
+            return p0
+        else:
+            return 1-p0
+
+    def err_kennedy(self,beta):
+        return (1 + np.exp(- (-beta + self.amplitude)**2)  - np.exp(- (beta + self.amplitude)**2)  )/2
+
+
+    def homodyne(self):
+        """ returns the probability of success by only doing homodyne measurement
+         """
+
+        a = self.amplitude.real
+        return (1+erf(self.amplitude))/2
+
+    def heterodyne(self):
+        return (1+(1-np.exp(-2*self.amplitude**2))/np.sqrt(np.pi))/2
+
+
+class PolicyEvaluator(Basics):
+    def __init__(self, **kwargs):
+        amplitude= kwargs.get("amplitude", .4)
+        dolinar_layers=kwargs.get("dolinar_layers", 2)
+        number_phases=kwargs.get("number_phases", 2)
+        super().__init__(amplitude=amplitude, dolinar_layers=dolinar_layers, number_phases=number_phases)
+
+        displacement_tree = {}
+        #self.at = make_attenuations(self.number_layers)
+        for layer in range(self.dolinar_layers+1):
+            displacement_tree[str(layer)] = {}
+
+        for k in outcomes_universe(self.dolinar_layers):
+            for layer in range(self.dolinar_layers+1):
+                displacement_tree[str(layer)][str(k[:layer])] = 0
+
+        self.displacement_tree = displacement_tree
+
+    def random_tree(self):
+        actions = self.displacement_tree.copy()
+        for k in outcomes_universe(self.dolinar_layers):
+            for layer in range(self.dolinar_layers+1):
+                actions[str(layer)][str(k[:layer])] = np.random.random()
+        return actions
+
+    def success_probability(self, displacements_tree):
+        """
+        Given a tree of conditional actions (on the outcomes history), computes
+        the success probability. Notice the final action is the guess
+        for the phase of the state given a given branch.
+        """
+        p=0
+        for ot in outcomes_universe(self.dolinar_layers):
+            c=1
+            for layer in range(self.dolinar_layers):
+                eff_at = np.prod(np.sin(self.at[:layer]))*np.cos(self.at[layer])
+                c*=P(displacements_tree[str(self.dolinar_layers)][str(ot)]*self.amplitude,
+                     displacements_tree[str(layer)][str(ot[:(layer)])], eff_at, ot[self.dolinar_layers-1-layer] ) #notice i respect that the columns of the outcomes_universe
+                #correspond to the layer: the last column is the first layer.
+            p += c
+        return p/self.number_phases
+
+
+    def greedy_strategy(self, actor, critic):
+        """Assuming actor, critic and self have the same dolinar_layers.
+            self.possible_phases are the possible phases of the coherent states
+
+        """
+        rr = np.ones((2**(self.dolinar_layers-1), self.dolinar_layers, 1))*actor.pad_value
+        rr[:,1:] = np.reshape(outcomes_universe(self.dolinar_layers-1),(2**(self.dolinar_layers-1), self.dolinar_layers-1,1))
+        preds = np.squeeze(actor(rr))
+
+        for ot, seqot in zip(outcomes_universe(self.dolinar_layers-1), preds):
+            for layer in range(self.dolinar_layers):
+                self.displacement_tree[str(layer)][str(ot[:layer])] = seqot[layer]
+
+            history = []
+            index_seqot, index_ot= 0, 0
+            for index_history in range(2*self.dolinar_layers-1):
+                if index_history%2==0:
+                    history.append(seqot[index_seqot])
+                    index_seqot+=1
+                else:
+                    history.append(ot[index_ot])
+                    index_ot+=1
+            for final_outcome in [0,1]:
+                final_history = np.append(history, final_outcome)
+                self.displacement_tree[str(self.dolinar_layers)][str(np.append(ot,final_outcome))] = self.possible_phases[critic.give_favourite_guess(final_history)[0]]
+
+        return self.success_probability(self.displacement_tree)
 
 def record():
     if not os.path.exists("results/number_rune.txt"):
@@ -79,12 +224,11 @@ def record():
         number_run = int(a)+1
     if not os.path.exists("run_"+str(number_run)):
         os.makedirs("results/run_"+str(number_run))
+        os.makedirs("results/run_"+str(number_run)+"/learning_curves")
+
         for net in ["actor_primary", "actor_target", "critic_primary", "critic_target"]:
             os.makedirs("results/run_"+str(number_run)+"/networks/"+net)
 
-    #
-    # if not os.path.exists("results/run_"+str(number_run)+"/models"):
-    #     os.makedirs("results/run_"+str(number_run)+"/models")
     return number_run
 
 class Complex(complex):
