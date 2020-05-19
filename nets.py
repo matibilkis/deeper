@@ -3,7 +3,7 @@ from tensorflow.keras.layers import Dense
 import numpy as np
 
 class Critic(tf.keras.Model):
-    def __init__(self,nature, valreg=0.01, seed_val=0.3, pad_value=-7., dolinar_layers=2, tau=0.01, number_phases=2):
+    def __init__(self,nature, valreg=0.01, seed_val=.1, pad_value=-7., dolinar_layers=2, tau=0.01, number_phases=2):
         '''
         dolinar_layers= number of photodetections
         pad_value: value not considered by the lstm

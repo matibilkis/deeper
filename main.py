@@ -67,17 +67,20 @@ def optimization_step(experiences, critic, critic_target, actor, actor_target, o
         dq_da = tape.gradient(qvals, actions_indexed)
 
     with tf.GradientTape() as tape:
-
+        tape.watch(actor.trainable_variables)
         pads = np.ones(len(experiences)).astype(np.float32)*actor.pad_value
         news = np.random.rand(experiences.shape[0], experiences.shape[1]+1).astype(np.float32)
         news[:,1:] = experiences
         news[:,0] = pads
         instances_actor = [i for i in range(0,2*actor.dolinar_layers,2)]
         actionss = actor(np.reshape(news[:,instances_actor], (experiences.shape[0],actor.dolinar_layers,1)).astype(np.float32))
-
         da_dtheta = tape.gradient(actionss, actor.trainable_variables, output_gradients=-dq_da)
 
-    #
+    # #
+    # print(dq_da)
+    # print("***LLLLL****")
+    # print(da_dtheta)
+    # print("*/!($/$!TY)R(G)")
     optimizer_actor.apply_gradients(zip(da_dtheta, actor.trainable_variables))
     actor.lstm.stateful=True
     return loss_critic
@@ -149,7 +152,7 @@ def ddpgKennedy(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=
         context_outcome_actor = np.reshape(np.array([actor.pad_value]),(1,1,1)).astype(np.float32)
         for layer in range(actor.dolinar_layers):
             beta_would_do = np.squeeze(actor(context_outcome_actor))
-            beta =  np.clip(beta_would_do + np.random.uniform(-noise_displacement, noise_displacement),-2*amplitude,2*amplitude)
+            beta =  beta_would_do + np.random.uniform(-noise_displacement, noise_displacement)#np.clip(,-2*amplitude,2*amplitude)
             outcome = env.give_outcome(beta,layer)
             experiences.append(beta)
             experiences.append(outcome)
@@ -158,7 +161,8 @@ def ddpgKennedy(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=
         ### ep-gredy guessing of the phase###
         ### ep-gredy guessing of the phase###
 
-        if np.random.random()< 1:
+        random_number = np.random.random()
+        if random_number< 1:
             val = np.random.choice(range(number_phases),1)[0]
             guess_index, guess_input_network = val, val/critic.number_phases
         else:
@@ -169,8 +173,8 @@ def ddpgKennedy(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=
         experiences.append(reward)
         buffer.add(tuple(experiences))
 
+        actor.lstm.reset_states()
         actor.lstm.stateful=False
-        #actor.lstm.reset_states()
 
         rt.append(reward)
         pt.append(policy_evaluator.greedy_strategy(actor = actor, critic = critic))
@@ -179,7 +183,7 @@ def ddpgKennedy(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=
         ###### OPTIMIZATION STEP ######
         ###### OPTIMIZATION STEP ######
         ###### OPTIMIZATION STEP ######
-        if (buffer.count>int(total_episodes/100))&(episode%100==1):
+        if (buffer.count>2):#(episode%100==1):
             sampled_experiences = buffer.sample(batch_size)
             new_loss = optimization_step(sampled_experiences, critic, critic_target, actor, actor_target, optimizer_critic, optimizer_actor)
             critic_target.update_target_parameters(critic)
@@ -193,6 +197,7 @@ def ddpgKennedy(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=
         avg_train.append(new_loss)
         #actor.lstm.reset_states()
         actor.lstm.stateful=True
+        actor.lstm.reset_states()
 
         if episode%(total_episodes/10) == 0: #this is for showing 10 results in total.
 
@@ -228,14 +233,14 @@ if __name__ == "__main__":
     tau = .1
     lr_critic = 0.01
     lr_actor=0.01
-    noise_displacement = .25
+    noise_displacement = 2
     batch_size = 128.
     ep_guess=0.01
     dolinar_layers=2
     number_phases=2
 
 
-    name_run = ddpgKennedy(amplitude=amplitude, total_episodes=10**5, dolinar_layers=dolinar_layers, noise_displacement=noise_displacement, tau=tau,
+    name_run = ddpgKennedy(amplitude=amplitude, total_episodes=4, dolinar_layers=dolinar_layers, noise_displacement=noise_displacement, tau=tau,
     buffer_size=10**8, batch_size=batch_size, lr_critic=lr_critic, lr_actor=lr_actor, ep_guess=ep_guess)
 
     info_run +="***\n***\nname_run: {} ***\ntau: {}\nlr_critic: {}\nnoise_displacement: {}\nbatch_size: {}\n-------\n-------\n\n".format(name_run,tau, lr_critic, noise_displacement, batch_size)
