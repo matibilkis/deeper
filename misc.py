@@ -179,7 +179,8 @@ class PolicyEvaluator(Basics):
 
 
     def greedy_strategy(self, actor, critic):
-        """Assuming actor, critic and self have the same dolinar_layers.
+        """
+        Assuming actor, critic and self have the same dolinar_layers.
             self.possible_phases are the possible phases of the coherent states
 
         """

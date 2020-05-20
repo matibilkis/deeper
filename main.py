@@ -87,7 +87,7 @@ def optimization_step(experiences, critic, critic_target, actor, actor_target, o
 
 
 
-def ddpgKennedy(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, total_episodes = 10**3, buffer_size=500, batch_size=64, ep_guess=0.01,
+def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, total_episodes = 10**3, buffer_size=500, batch_size=64, ep_guess=0.01,
  noise_displacement=0.5, lr_actor=0.01, lr_critic=0.001, tau=0.005):
 
     if not os.path.exists("results"):
@@ -135,13 +135,13 @@ def ddpgKennedy(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=
     ##### STORING FOLDER ####
     ##### STORING FOLDER ####
 
-    actions = {}
-    for layer in range(dolinar_layers+1):
-        actions[str(layer)] = {}
-
-    for k in outcomes_universe(dolinar_layers):
-        for layer in range(dolinar_layers+1):
-            actions[str(layer)][str(k[:layer])] = []
+    # actions = {}
+    # for layer in range(dolinar_layers+1):
+    #     actions[str(layer)] = {}
+    #
+    # for k in outcomes_universe(dolinar_layers):
+    #     for layer in range(dolinar_layers+1):
+    #         actions[str(layer)][str(k[:layer])] = []
 
     #######
     at = make_attenuations(dolinar_layers)
@@ -160,9 +160,7 @@ def ddpgKennedy(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=
 
         ### ep-gredy guessing of the phase###
         ### ep-gredy guessing of the phase###
-
-        random_number = np.random.random()
-        if random_number< 1:
+        if np.random.random()< ep_guess:
             val = np.random.choice(range(number_phases),1)[0]
             guess_index, guess_input_network = val, val/critic.number_phases
         else:
@@ -183,7 +181,7 @@ def ddpgKennedy(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=
         ###### OPTIMIZATION STEP ######
         ###### OPTIMIZATION STEP ######
         ###### OPTIMIZATION STEP ######
-        if (buffer.count>2):#(episode%100==1):
+        if (buffer.count>100):#(episode%100==1):
             sampled_experiences = buffer.sample(batch_size)
             new_loss = optimization_step(sampled_experiences, critic, critic_target, actor, actor_target, optimizer_critic, optimizer_actor)
             critic_target.update_target_parameters(critic)
@@ -199,7 +197,7 @@ def ddpgKennedy(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=
         actor.lstm.stateful=True
         actor.lstm.reset_states()
 
-        if episode%(total_episodes/10) == 0: #this is for showing 10 results in total.
+        if episode%(total_episodes/100) == 0: #this is for showing 10 results in total.
 
             template = 'Episode {}, \Rt: {}, \Pt: {}, Train loss: {}\n\n'
             print(template.format(episode+1,
@@ -230,17 +228,17 @@ if __name__ == "__main__":
     info_run = ""
     to_csv=[]
     amplitude=0.4
-    tau = .1
+    tau = .01
     lr_critic = 0.01
     lr_actor=0.01
-    noise_displacement = 2
+    noise_displacement = .25
     batch_size = 128.
     ep_guess=0.01
     dolinar_layers=2
     number_phases=2
 
 
-    name_run = ddpgKennedy(amplitude=amplitude, total_episodes=4, dolinar_layers=dolinar_layers, noise_displacement=noise_displacement, tau=tau,
+    name_run = RDPG(amplitude=amplitude, total_episodes=10**4, dolinar_layers=dolinar_layers, noise_displacement=noise_displacement, tau=tau,
     buffer_size=10**8, batch_size=batch_size, lr_critic=lr_critic, lr_actor=lr_actor, ep_guess=ep_guess)
 
     info_run +="***\n***\nname_run: {} ***\ntau: {}\nlr_critic: {}\nnoise_displacement: {}\nbatch_size: {}\n-------\n-------\n\n".format(name_run,tau, lr_critic, noise_displacement, batch_size)

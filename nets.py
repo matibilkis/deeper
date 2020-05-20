@@ -22,17 +22,17 @@ class Critic(tf.keras.Model):
         self.lstm = tf.keras.layers.LSTM(500, return_sequences=True)
 
         self.tau = tau
-        self.l1 = Dense(250,kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
+        self.l1 = Dense(500,kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
         bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
         kernel_regularizer=tf.keras.regularizers.l1(valreg),
     activity_regularizer=tf.keras.regularizers.l2(valreg))
 
-        self.l2 = Dense(100, kernel_regularizer=tf.keras.regularizers.l1(valreg),
+        self.l2 = Dense(300, kernel_regularizer=tf.keras.regularizers.l1(valreg),
     activity_regularizer=tf.keras.regularizers.l2(valreg),
     kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
     bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val))
 
-        self.l3 = Dense(100, kernel_regularizer=tf.keras.regularizers.l1(valreg),
+        self.l3 = Dense(300, kernel_regularizer=tf.keras.regularizers.l1(valreg),
     activity_regularizer=tf.keras.regularizers.l2(valreg),
     kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
     bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val))
@@ -59,6 +59,7 @@ class Critic(tf.keras.Model):
     def call(self, inputs):
         feat = self.mask(inputs)
         feat= self.lstm(feat)
+
         # feat = tf.nn.dropout(feat, rate=0.01)
         feat = tf.nn.relu(self.l1(feat))
         # feat = tf.nn.dropout(feat, rate=0.01)
@@ -161,26 +162,29 @@ class Actor(tf.keras.Model):
         self.tau = tau
 
         if nature == "primary":
+            self.dropout_rate = 0.1
             self.lstm = tf.keras.layers.LSTM(500, return_sequences=True, stateful=True)
             self.mask = tf.keras.layers.Masking(mask_value=pad_value,
                                   input_shape=(1,1))#CHECK
         elif nature == "target":
+            self.dropout_rate = 0.
+
             self.lstm = tf.keras.layers.LSTM(500, return_sequences=True, stateful=False)
             self.mask = tf.keras.layers.Masking(mask_value=pad_value,
                                   input_shape=(self.dolinar_layers, 1)) #'cause i feed altoghether.
         else:
             print("Hey! the character is either primary or target")
-        self.l1 = Dense(250,kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
+        self.l1 = Dense(500,kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
         bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
         kernel_regularizer=tf.keras.regularizers.l1(valreg),
     activity_regularizer=tf.keras.regularizers.l2(valreg), dtype='float32')
 
-        self.l2 = Dense(100, kernel_regularizer=tf.keras.regularizers.l1(valreg),
+        self.l2 = Dense(300, kernel_regularizer=tf.keras.regularizers.l1(valreg),
     activity_regularizer=tf.keras.regularizers.l2(valreg),
     kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
     bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val), dtype='float32')
 
-        self.l3 = Dense(100, kernel_regularizer=tf.keras.regularizers.l1(valreg),
+        self.l3 = Dense(300, kernel_regularizer=tf.keras.regularizers.l1(valreg),
     activity_regularizer=tf.keras.regularizers.l2(valreg),
     kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
     bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val), dtype='float32')
@@ -207,9 +211,9 @@ class Actor(tf.keras.Model):
     def call(self, inputs):
         feat = self.mask(inputs)
         feat= self.lstm(feat)
-        # feat = tf.nn.dropout(feat, rate=0.01)
+        feat = tf.nn.dropout(feat, rate=self.dropout_rate)
         feat = tf.nn.relu(self.l1(feat))
-        # feat = tf.nn.dropout(feat, rate=0.01)
+        feat = tf.nn.dropout(feat, rate=self.dropout_rate)
         feat = tf.nn.relu(self.l2(feat))
         feat = tf.nn.relu(self.l3(feat))
         feat = tf.nn.tanh(self.l4(feat))
