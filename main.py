@@ -160,9 +160,10 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
 
         ### ep-gredy guessing of the phase###
         ### ep-gredy guessing of the phase###
-        if np.random.random()< ep_guess:
+        if np.random.random()< 1:
             val = np.random.choice(range(number_phases),1)[0]
             guess_index, guess_input_network = val, val/critic.number_phases
+            print(guess_input_network)
         else:
             guess_index, guess_input_network = critic.give_favourite_guess(experiences) #experiences is the branch of the current tree of actions + outcomes.
         experiences.append(guess_input_network)
@@ -181,12 +182,16 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
         ###### OPTIMIZATION STEP ######
         ###### OPTIMIZATION STEP ######
         ###### OPTIMIZATION STEP ######
-        if (buffer.count>100):#(episode%100==1):
+        if (buffer.count==15):#(episode%100==1):
             sampled_experiences = buffer.sample(batch_size)
-            new_loss = optimization_step(sampled_experiences, critic, critic_target, actor, actor_target, optimizer_critic, optimizer_actor)
-            critic_target.update_target_parameters(critic)
-            actor_target.update_target_parameters(actor)
-            noise_displacement = max(0.1,0.999*noise_displacement)
+            np.save(str(dolinar_layers)+"_sample", sampled_experiences)
+        # if (buffer.count>100):#(episode%100==1):
+        #     sampled_experiences = buffer.sample(batch_size)
+        #     np.save(str(dolinar_layers)+"_sample", sampled_experiences)
+        #     new_loss = optimization_step(sampled_experiences, critic, critic_target, actor, actor_target, optimizer_critic, optimizer_actor)
+        #     critic_target.update_target_parameters(critic)
+        #     actor_target.update_target_parameters(actor)
+        #     noise_displacement = max(0.1,0.999*noise_displacement)
         ###### OPTIMIZATION STEP ######
         ###### OPTIMIZATION STEP ######
         ###### OPTIMIZATION STEP ######
@@ -197,15 +202,15 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
         actor.lstm.stateful=True
         actor.lstm.reset_states()
 
-        if episode%(total_episodes/100) == 0: #this is for showing 10 results in total.
-
-            template = 'Episode {}, \Rt: {}, \Pt: {}, Train loss: {}\n\n'
-            print(template.format(episode+1,
-                                np.sum(rt)/(episode+1),
-                                  pt[-1],
-                                 np.round(np.array(avg_train).mean(),5),
-                                )
-                  )
+        # if episode%(total_episodes/100) == 0: #this is for showing 10 results in total.
+        #
+        #     template = 'Episode {}, \Rt: {}, \Pt: {}, Train loss: {}\n\n'
+        #     print(template.format(episode+1,
+        #                         np.sum(rt)/(episode+1),
+        #                           pt[-1],
+        #                          np.round(np.array(avg_train).mean(),5),
+        #                         )
+        #           )
 
     cumre=0
     rrt = []

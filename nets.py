@@ -82,6 +82,8 @@ class Critic(tf.keras.Model):
 
         and returns an array of shape (experiments, self.layers, 2 ), as accepted by an RNN
         """
+        if isinstance(sample_buffer, tf.Tensor):
+            sample_buffer = sample_buffer.numpy()
         rr = np.ones(sample_buffer.shape)*self.pad_value
         rr[:,1:] = sample_buffer[:,:-1]
         rr = np.reshape(rr, (sample_buffer.shape[0],self.dolinar_layers+1,2))
@@ -90,6 +92,28 @@ class Critic(tf.keras.Model):
         rewards_obtained[:,-1] = sample_buffer[:,-1]
         return rr, rewards_obtained
 
+
+    # @tf.function
+    # def process_sequence_tf(self, sample_buffer):
+    #     exps = tf.convert_to_tensor(sample_buffer)
+    #     onns = tf.multiply(self.pad_value,tf.ones((sample_buffer.shape[0],1)))
+    #     rr = tf.concat([onns,exps[:,:-1]], axis=1)
+    #     rr = tf.reshape(rr, (sample_buffer.shape[0],self.dolinar_layers+1,2))
+    #     rr = tf.concat([tf.zeros((sample_buffer.shape[0], self.dolinar_layers)), tf.expand_dims(exps[:,-1],axis=1)], axis=1)
+    #     return exps, rr
+
+    @tf.function
+    def process_sequence_tf(self, sample_buffer):
+        exps = tf.convert_to_tensor(sample_buffer)
+        onns = tf.multiply(self.pad_value,tf.ones((sample_buffer.shape[0],1)))
+        s1 = tf.concat([onns,exps[:,:-1]], axis=1)
+        s1 = tf.reshape(s1, (sample_buffer.shape[0],self.dolinar_layers+1,2))
+        rr = tf.concat([tf.zeros((sample_buffer.shape[0], self.dolinar_layers)), tf.expand_dims(exps[:,-1],axis=1)], axis=1)
+    ##############################################################################################
+    #     exps = tf.convert_to_tensor(sample_buffer)
+    #     s1 = tf.reshape(tf.concat([tf.multiply(critic.pad_value,tf.ones((sample_buffer.shape[0],1))),exps[:,:-1]], axis=1), (sample_buffer.shape[0],critic.dolinar_layers+1,2))
+    #     rr = tf.concat([tf.zeros((sample_buffer.shape[0], critic.dolinar_layers)), tf.expand_dims(exps[:,-1],axis=1)], axis=1)
+        return s1, rr
 
     # def pad_single_sequence(self, seq):
     #     """"
@@ -128,7 +152,46 @@ class Critic(tf.keras.Model):
         maxs = np.squeeze(tf.math.reduce_max(all_preds,axis=2).numpy())
         ll[:,-2] = maxs[:,-1] # This is the last befre the guess. So the label is max_g Q(h-L, g)
         ll = np.expand_dims(ll,axis=1)
+        ll = ll.reshape((batched_input.shape[0], self.dolinar_layers+1, 1))
         return ll
+
+
+
+    @tf.function
+    def give_td_error_Kennedy_guess_tf(self,batched_input,sequential_rews_with_zeros):
+        if self.nature != "target":
+            raise AttributeError("I'm not the target!")
+
+        final_rews = tf.reshape(sequential_rews_with_zeros[:,-1], (batched_input.shape[0],1,1))
+        bellman_tds_noguess = self(batched_input)[:,1:-1,:]
+
+        phases = tf.range(self.number_phases, dtype=np.float32)/self.number_phases
+
+        unstacked = tf.unstack(tf.convert_to_tensor(batched_input))
+        phases_concs = {}
+        for ph in range(self.number_phases):
+            phases_concs[str(ph)] = []
+        stacked = {}
+
+        for episode in unstacked:
+            prefinal = episode[:-1]
+            for ph in range(self.number_phases):
+                final = tf.expand_dims(tf.concat([tf.unstack(episode[-1])[0], phases[ph]], axis=0), axis=0)
+                phases_concs[str(ph)].append(tf.concat([prefinal, final], axis=0))
+        #
+            for ph in range(self.number_phases):
+                stacked[str(ph)] = tf.stack(phases_concs[str(ph)], axis=0)
+
+        all_preds = tf.concat([self(stacked[str(ph)]) for ph in range(self.number_phases)], axis=2)
+        maxs = tf.math.reduce_max(all_preds,axis=2)[:,-1]
+        bellman_td = tf.concat([tf.reshape(bellman_tds_noguess,(batched_input.shape[0],self.dolinar_layers-1)), tf.reshape(maxs,(batched_input.shape[0],1))], axis=1)
+        return tf.concat([bellman_td, tf.reshape(sequential_rews_with_zeros[:,-1].astype(np.float32), (batched_input.shape[0],1))], axis=1)
+
+
+
+
+
+
 
     def give_favourite_guess(self,hL):
         """
@@ -170,8 +233,8 @@ class Actor(tf.keras.Model):
             self.dropout_rate = 0.
 
             self.lstm = tf.keras.layers.LSTM(500, return_sequences=True, stateful=False)
-            self.mask = tf.keras.layers.Masking(mask_value=pad_value,
-                                  input_shape=(self.dolinar_layers, 1)) #'cause i feed altoghether.
+            self.mask = tf.keras.layers.Masking(mask_value=pad_value, input_shape=(1,1))
+                                  # input_shape=(self.dolinar_layers, 1)) #'cause i feed altoghether.
         else:
             print("Hey! the character is either primary or target")
         self.l1 = Dense(500,kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
@@ -221,12 +284,36 @@ class Actor(tf.keras.Model):
         return feat
 
     def process_sequence_of_experiences(self, experiences):
-
+        self.lstm.stateful=True
         export = experiences.copy()
         for index in range(1,2*self.dolinar_layers-1,2): # I consider from first outcome to last one (but guess)
             export[:,index+1] = np.squeeze(self(np.reshape(np.array(export[:,index]),
                                                                  (experiences.shape[0],1,1))))
+        self.lstm.stateful=False
+
         return export
+
+    @tf.function
+    def process_sequence_of_experiences_tf(self, experiences):
+        self.lstm.stateful=True
+
+        unstacked_exp = tf.unstack(tf.convert_to_tensor(experiences), axis=1)
+        to_stack = []
+        for index in range(2*self.dolinar_layers-1): # I consider from first outcome to last one (but guess)
+            if (index==0):
+                to_stack.append(unstacked_exp[index])
+            if (index%2 == 1):
+                to_stack.append(unstacked_exp[index])
+
+                to_stack.append(tf.squeeze(self(tf.reshape(unstacked_exp[index],(experiences.shape[0],1,1)))))
+        for index in range(2*self.dolinar_layers-1, 2*self.dolinar_layers+2):
+            to_stack.append(unstacked_exp[index])
+
+        return tf.stack(to_stack, axis=1)
+
+        self.lstm.stateful=False
+        return tf.stack(to_stack, axis=1)
+
 
     def __str__(self):
         return self.name
