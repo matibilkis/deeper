@@ -234,7 +234,7 @@ class Actor(tf.keras.Model):
         feat = tf.nn.relu(self.l2(feat))
         feat = tf.nn.relu(self.l3(feat))
         feat = tf.nn.tanh(self.l4(feat))
-
+        feat = tf.clip_by_value(feat, -1.0, 1.0)
         return feat
 
     def process_sequence_of_experiences(self, experiences):

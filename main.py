@@ -93,17 +93,16 @@ def actor_grad_tf(actor, dq_da, experiences, optimizer_actor):
 
 
 
-
+@tf.function
 def optimization_step(experiences, critic, critic_target, actor, actor_target, optimizer_critic, optimizer_actor):
     # actor.lstm.reset_states()
     actor.lstm.stateful=False
-    experiences = experiences.astype(np.float32)
+    # experiences = experiences.astype(np.float32)
     targeted_experience = actor_target.process_sequence_of_experiences_tf(experiences)
     sequences, zeroed_rews = critic_target.process_sequence_tf(targeted_experience)
     labels_critic = critic_target.give_td_errors_tf( sequences, zeroed_rews)
 
     loss_critic = step_critic_tf(sequences ,labels_critic, critic, optimizer_critic)
-    loss_critic = loss_critic.numpy()
 
     dq_da = critic_grad_tf(critic, experiences)
 
@@ -201,9 +200,10 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
             # sampled_experiences = buffer.sample(batch_size)
             # np.save(str(dolinar_layers)+"_sample", sampled_experiences)
         if (buffer.count>batch_size):#(episode%100==1):
-            sampled_experiences = buffer.sample(batch_size)
+            sampled_experiences = tf.convert_to_tensor(buffer.sample(batch_size), dtype=np.float32)
 
             new_loss = optimization_step(sampled_experiences, critic, critic_target, actor, actor_target, optimizer_critic, optimizer_actor)
+            new_loss = new_loss.numpy()
             critic_target.update_target_parameters(critic)
             actor_target.update_target_parameters(actor)
             noise_displacement = max(0.1,0.999*noise_displacement)
@@ -247,13 +247,13 @@ if __name__ == "__main__":
     info_run = ""
     to_csv=[]
     amplitude=0.4
-    tau = .005
-    lr_critic = 0.0001
-    lr_actor=0.0001
+    tau = .01
+    lr_critic = 0.001
+    lr_actor=0.001
     noise_displacement = .25
-    batch_size = 64.
+    batch_size = 128.
     ep_guess=0.01
-    dolinar_layers=3
+    dolinar_layers=2
     number_phases=2
 
 
