@@ -48,4 +48,14 @@ policy_evaluator = PolicyEvaluator(amplitude = amplitude, dolinar_layers=dolinar
 experiences = exper.astype(np.float32)
 targeted_experience = actor_target.process_sequence_of_experiences_tf(experiences)
 sequences, zeroed_rews = critic_target.process_sequence_tf(targeted_experience)
-critic_target.give_td_error_Kennedy_guess_tf( sequences.numpy(), zeroed_rews.numpy())
+critic_target.give_td_errors_tf( sequences, zeroed_rews)
+###
+
+with tf.GradientTape() as tape:
+    tape.watch(critic.trainable_variables)
+    preds_critic = critic(sequences)
+    loss_critic = tf.keras.losses.MSE(labels_critic, preds_critic)
+    loss_critic = tf.reduce_mean(loss_critic)
+    grads = tape.gradient(loss_critic, critic.trainable_variables)
+    optimizer_critic.apply_gradients(zip(grads, critic.trainable_variables))
+    loss_critic = np.squeeze(loss_critic.numpy())

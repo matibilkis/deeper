@@ -93,81 +93,35 @@ class Critic(tf.keras.Model):
         return rr, rewards_obtained
 
 
-    # @tf.function
-    # def process_sequence_tf(self, sample_buffer):
-    #     exps = tf.convert_to_tensor(sample_buffer)
-    #     onns = tf.multiply(self.pad_value,tf.ones((sample_buffer.shape[0],1)))
-    #     rr = tf.concat([onns,exps[:,:-1]], axis=1)
-    #     rr = tf.reshape(rr, (sample_buffer.shape[0],self.dolinar_layers+1,2))
-    #     rr = tf.concat([tf.zeros((sample_buffer.shape[0], self.dolinar_layers)), tf.expand_dims(exps[:,-1],axis=1)], axis=1)
-    #     return exps, rr
-
     @tf.function
     def process_sequence_tf(self, sample_buffer):
+        """Ths function just reshapes (and pads) the aray of experiences (transform the vector
+        or collection of vectors to a tensor of batchedd inputs and another tensor of zeroed rewards.
+        """
         exps = tf.convert_to_tensor(sample_buffer)
         onns = tf.multiply(self.pad_value,tf.ones((sample_buffer.shape[0],1)))
         s1 = tf.concat([onns,exps[:,:-1]], axis=1)
         s1 = tf.reshape(s1, (sample_buffer.shape[0],self.dolinar_layers+1,2))
         rr = tf.concat([tf.zeros((sample_buffer.shape[0], self.dolinar_layers)), tf.expand_dims(exps[:,-1],axis=1)], axis=1)
-    ##############################################################################################
-    #     exps = tf.convert_to_tensor(sample_buffer)
-    #     s1 = tf.reshape(tf.concat([tf.multiply(critic.pad_value,tf.ones((sample_buffer.shape[0],1))),exps[:,:-1]], axis=1), (sample_buffer.shape[0],critic.dolinar_layers+1,2))
-    #     rr = tf.concat([tf.zeros((sample_buffer.shape[0], critic.dolinar_layers)), tf.expand_dims(exps[:,-1],axis=1)], axis=1)
         return s1, rr
-
-    # def pad_single_sequence(self, seq):
-    #     """"
-    #     input: [a0, o1, a1, o2, a2, o3, a4]
-    #
-    #     output: [[a0, pad], [o1, a1], [...]]
-    #
-    #     the cool thing is that then you can put this to predict the greedy guess/action.
-    #     """
-    #     padded_data = np.ones((1,self.dolinar_layers+1, 2))*self.pad_value
-    #     padded_data[0][0][0] = seq[0]
-    #     #padded_data[0][0] = data[0]
-    #     for k in range(1,self.dolinar_layers+1):
-    #         padded_data[0][k] = seq[k:(k+2)]
-    #     return padded_data
-
-    def give_td_error_Kennedy_guess(self,batched_input,sequential_rews_with_zeros):
-        # this function takes as input the actions as given by the target actor (but the first one!)
-        #and outpus the correspoindg TD-errors for DDPG! To obtain them from sample of buffer
-        #you call the method targeted_sequence from the actor_target and then the process_sequence
-        #of this critic network.
-        if self.nature != "target":
-            raise AttributeError("I'm not the target!")
-            return
-        b = batched_input.copy()
-        ll = sequential_rews_with_zeros.copy()
-        for k in range(self.dolinar_layers):
-            ll[:,k] = np.squeeze(self(b))[:,k+1] + ll[:,k]
-
-        b[:,-1][:,-1] = 0.
-        all_preds = self(b)
-        for phase in np.arange(1,self.number_phases)/self.number_phases:
-            b[:,-1][:,-1] = phase
-            all_preds = tf.concat([all_preds,self(b)],2)
-
-        maxs = np.squeeze(tf.math.reduce_max(all_preds,axis=2).numpy())
-        ll[:,-2] = maxs[:,-1] # This is the last befre the guess. So the label is max_g Q(h-L, g)
-        ll = np.expand_dims(ll,axis=1)
-        ll = ll.reshape((batched_input.shape[0], self.dolinar_layers+1, 1))
-        return ll
 
 
 
     @tf.function
-    def give_td_error_Kennedy_guess_tf(self,batched_input,sequential_rews_with_zeros):
+    def give_td_errors_tf(self,sequences,zeroed_rews):
+        """Gives the td_errors, notice we don't use lstm.stateful 'cause we process
+        all the sequence (see the ** marks)
+
+        '"""
         if self.nature != "target":
             raise AttributeError("I'm not the target!")
 
-        final_rews = tf.reshape(sequential_rews_with_zeros[:,-1], (batched_input.shape[0],1,1))
-        bellman_tds_noguess = self(batched_input)[:,1:-1,:]
+        final_rews = tf.reshape(zeroed_rews[:,-1], (sequences.shape[0],1,1))
+        bellman_tds_noguess = self(sequences)[:,1:-1,:] #**
 
         phases = tf.range(self.number_phases, dtype=np.float32)/self.number_phases
 
-        unstacked = tf.unstack(tf.convert_to_tensor(batched_input))
+        unstacked = tf.unstack(tf.convert_to_tensor(sequences))
         phases_concs = {}
         for ph in range(self.number_phases):
             phases_concs[str(ph)] = []
@@ -176,20 +130,16 @@ class Critic(tf.keras.Model):
         for episode in unstacked:
             prefinal = episode[:-1]
             for ph in range(self.number_phases):
-                final = tf.expand_dims(tf.concat([tf.unstack(episode[-1])[0], phases[ph]], axis=0), axis=0)
+                final = tf.expand_dims(tf.stack([tf.unstack(episode[-1])[0], phases[ph]], axis=0), axis=0)
                 phases_concs[str(ph)].append(tf.concat([prefinal, final], axis=0))
         #
             for ph in range(self.number_phases):
                 stacked[str(ph)] = tf.stack(phases_concs[str(ph)], axis=0)
 
-        all_preds = tf.concat([self(stacked[str(ph)]) for ph in range(self.number_phases)], axis=2)
+        all_preds = tf.concat([self(stacked[str(ph)]) for ph in range(self.number_phases)], axis=2) #**
         maxs = tf.math.reduce_max(all_preds,axis=2)[:,-1]
-        bellman_td = tf.concat([tf.reshape(bellman_tds_noguess,(batched_input.shape[0],self.dolinar_layers-1)), tf.reshape(maxs,(batched_input.shape[0],1))], axis=1)
-        return tf.concat([bellman_td, tf.reshape(sequential_rews_with_zeros[:,-1].astype(np.float32), (batched_input.shape[0],1))], axis=1)
-
-
-
-
+        bellman_td = tf.concat([tf.reshape(bellman_tds_noguess,(sequences.shape[0],self.dolinar_layers-1)), tf.reshape(maxs,(sequences.shape[0],1))], axis=1)
+        return tf.concat([bellman_td, tf.reshape(zeroed_rews[:,-1], (sequences.shape[0],1))], axis=1)
 
 
 
@@ -224,17 +174,24 @@ class Actor(tf.keras.Model):
         self.nature = nature
         self.tau = tau
 
+
         if nature == "primary":
             self.dropout_rate = 0.1
             self.lstm = tf.keras.layers.LSTM(500, return_sequences=True, stateful=True)
             self.mask = tf.keras.layers.Masking(mask_value=pad_value,
                                   input_shape=(1,1))#CHECK
+
+
         elif nature == "target":
             self.dropout_rate = 0.
+            self.lstm = tf.keras.layers.LSTM(500, return_sequences=True, stateful=True)
+            self.mask = tf.keras.layers.Masking(mask_value=pad_value,
+                                  input_shape=(1,1))#CHECK
 
-            self.lstm = tf.keras.layers.LSTM(500, return_sequences=True, stateful=False)
-            self.mask = tf.keras.layers.Masking(mask_value=pad_value, input_shape=(1,1))
-                                  # input_shape=(self.dolinar_layers, 1)) #'cause i feed altoghether.
+            #
+            # self.lstm = tf.keras.layers.LSTM(500, return_sequences=True, stateful=False)
+            # self.mask = tf.keras.layers.Masking(mask_value=pad_value, input_shape=(1,1))
+            #                       input_shape=(self.dolinar_layers, 1)) #'cause i feed altoghether.
         else:
             print("Hey! the character is either primary or target")
         self.l1 = Dense(500,kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
@@ -260,9 +217,6 @@ class Actor(tf.keras.Model):
 
 
     def update_target_parameters(self,primary_net):
-        #### only
-        # for i,j in zip(self.get_weights(), primary_net.get_weights()):
-        #     tf.assign(i, tau*j + (i-tau)*i )
         prim_weights = primary_net.get_weights()
         targ_weights = self.get_weights()
         weights = []
@@ -295,7 +249,6 @@ class Actor(tf.keras.Model):
 
     @tf.function
     def process_sequence_of_experiences_tf(self, experiences):
-        self.lstm.stateful=True
 
         unstacked_exp = tf.unstack(tf.convert_to_tensor(experiences), axis=1)
         to_stack = []
@@ -308,12 +261,9 @@ class Actor(tf.keras.Model):
                 to_stack.append(tf.squeeze(self(tf.reshape(unstacked_exp[index],(experiences.shape[0],1,1)))))
         for index in range(2*self.dolinar_layers-1, 2*self.dolinar_layers+2):
             to_stack.append(unstacked_exp[index])
+        self.lstm.reset_states()
 
         return tf.stack(to_stack, axis=1)
-
-        self.lstm.stateful=False
-        return tf.stack(to_stack, axis=1)
-
 
     def __str__(self):
         return self.name

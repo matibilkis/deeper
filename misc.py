@@ -186,7 +186,11 @@ class PolicyEvaluator(Basics):
         """
         rr = np.ones((2**(self.dolinar_layers-1), self.dolinar_layers, 1))*actor.pad_value
         rr[:,1:] = np.reshape(outcomes_universe(self.dolinar_layers-1),(2**(self.dolinar_layers-1), self.dolinar_layers-1,1))
+
+        actor.lstm.stateful = False
         preds = np.squeeze(actor(rr))
+        actor.lstm.stateful = True
+
         for ot, seqot in zip(outcomes_universe(self.dolinar_layers-1), preds):
             for layer in range(self.dolinar_layers):
                 self.displacement_tree[str(layer)][str(ot[:layer])] = seqot[layer]

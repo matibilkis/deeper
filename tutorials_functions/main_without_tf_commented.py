@@ -19,10 +19,10 @@ from buffer import ReplayBuffer
 
 
 @tf.function
-def step_critic_tf(batched_input,labels_critic, critic, optimizer_critic):
+def step_critic_tf(labels_critic, critic, optimizer_critic):
     with tf.GradientTape() as tape:
         tape.watch(critic.trainable_variables)
-        preds_critic = critic(batched_input)
+        preds_critic = critic(sequences)
         loss_critic = tf.keras.losses.MSE(tf.expand_dims(labels_critic, axis=2), preds_critic)
         loss_critic = tf.reduce_mean(loss_critic)
         grads = tape.gradient(loss_critic, critic.trainable_variables)
@@ -43,7 +43,7 @@ def critic_grad_tf(critic, experiences):
         tape.watch(actions_indexed)
 
         index_actions=0
-        watched_exps=[tf.ones((experiences.shape[0],1,1))*critic.pad_value]
+        watched_exps=[tf.ones((experiences.shape[0],1,1))*actor.pad_value]
         watched_actions_unstacked = tf.unstack(actions_indexed, axis=1)
         for index in range(0,experiences.shape[-1]-1):
             if index in actions_wathed_index:
@@ -59,56 +59,88 @@ def critic_grad_tf(critic, experiences):
 
 @tf.function
 def actor_grad_tf(actor, dq_da, experiences, optimizer_actor):
-    unstacked_exp = tf.unstack(experiences, axis=1)
-    actions_per_episode={}
-    context_outcome_actor = np.reshape(np.array([actor.pad_value]),(1,1,1)).astype(np.float32)
-    finns = [tf.multiply(actor(context_outcome_actor), tf.ones((experiences.shape[0],1,1)))]
-
     with tf.GradientTape() as tape:
-        tape.watch(actor.trainable_variables)
+        unstacked_exp = tf.unstack(tf.convert_to_tensor(experiences), axis=1)
+        states_to_act=[tf.ones((experiences.shape[0],1,1))*actor.pad_value]
+
+        to_stack = []
+        actions_wathed_index = []
         for index in range(1,2*actor.dolinar_layers-2,2):
-            actions_per_episode[str(index)] = []
-            for k in tf.unstack(unstacked_exp[index]):
-                actions_per_episode[str(index)].append(actor(tf.reshape(k, (1,1,1))))
-            finns.append(tf.concat(actions_per_episode[str(index)], axis=0))
-        final_preds = tf.concat(finns, axis=1)
-        da_dtheta=tape.gradient(final_preds, actor.trainable_variables, output_gradients=-dq_da)
+            states_to_act.append(tf.reshape(unstacked_exp[index],(experiences.shape[0],1,1)))
+
+        actor_thinks = actor(tf.concat(states_to_act, axis=1))
+        da_dtheta = tape.gradient(actor_thinks, actor.trainable_variables, output_gradients=-dq_da)
         optimizer_actor.apply_gradients(zip(da_dtheta, actor.trainable_variables))
     return
 
 
-    # states_to_act=[tf.ones((experiences.shape[0],1,1))*actor.pad_value]
-    #
-    # to_stack = []
-    # actions_wathed_index = []
-    # for index in range(1,2*actor.dolinar_layers-2,2):
-    #     states_to_act.append(tf.reshape(unstacked_exp[index],(experiences.shape[0],1,1)))
-    # inps_actor = tf.concat(states_to_act, axis=1)
-    # actor.lstm.stateful=False
-    # actor_thinks = actor(inps_actor)
-    # actor.lstm.stateful=True
-    # da_dtheta = tape.gradient(actor_thinks, actor.trainable_variables, output_gradients=-dq_da)
-    # optimizer_actor.apply_gradients(zip(da_dtheta, actor.trainable_variables))
-
-
-
-
-
 def optimization_step(experiences, critic, critic_target, actor, actor_target, optimizer_critic, optimizer_actor):
-    # actor.lstm.reset_states()
-    actor.lstm.stateful=False
     experiences = experiences.astype(np.float32)
     targeted_experience = actor_target.process_sequence_of_experiences_tf(experiences)
     sequences, zeroed_rews = critic_target.process_sequence_tf(targeted_experience)
     labels_critic = critic_target.give_td_errors_tf( sequences, zeroed_rews)
-
-    loss_critic = step_critic_tf(sequences ,labels_critic, critic, optimizer_critic)
+    #
+    # ###### train the critic ######
+    # with tf.GradientTape() as tape:
+    #     tape.watch(critic.trainable_variables)
+    #     preds_critic = critic(sequences)
+    #     loss_critic = tf.keras.losses.MSE(labels_critic, preds_critic)
+    #     loss_critic = tf.reduce_mean(loss_critic)
+    #     grads = tape.gradient(loss_critic, critic.trainable_variables)
+    #     optimizer_critic.apply_gradients(zip(grads, critic.trainable_variables))
+    #     loss_critic = np.squeeze(loss_critic.numpy())
+    #
+    loss_critic = step_critic_tf(labels_critic, critic, optimizer_critic)
     loss_critic = loss_critic.numpy()
 
+    # actions_indexed = [0.]*(actor.dolinar_layers)
+    # with tf.GradientTape() as tape:
+    #     ##### get the actions only ######
+    #     actions_with_outcomes = experiences.copy()
+    #     act_ind=0
+    #     for ind in range(experiences.shape[1]): #experiences.shape[0] = 2L +2
+    #         if (ind%2 == 0)&(ind < 2*actor.dolinar_layers):
+    #             ac = tf.convert_to_tensor(np.reshape(experiences[:,ind], (len(experiences),1,1)))
+    #             actions_indexed[act_ind] = ac
+    #             act_ind+=1
+    #
+    #     actions_indexed = tf.concat(actions_indexed,axis=1)
+    #     tape.watch(actions_indexed) ####watch the ations
+    #
+    #     ### now prepare the state acions to put them into the critic###
+    #     padded_data = [tf.ones((experiences.shape[0],1))*actor.pad_value]
+    #     watched_input_critic  = padded_data.copy()
+    #     ind_actions=0
+    #     for ind,k in enumerate(tf.unstack(tf.convert_to_tensor(experiences[:,:-1]),axis=1)):
+    #         if (ind%2==0)&(ind < 2*actor.dolinar_layers):
+    #             padded_data.append(actions_indexed[:,ind_actions]) ### i add the input of the critic the watched actions!
+    #             ind_actions+=1
+    #         else:
+    #             padded_data.append(tf.expand_dims(k, axis=1))
+    #         if ind == 0:
+    #             watched_input_critic = tf.stack([padded_data[0], padded_data[1]], axis=2) #importantly i put the padd first (state_action.)
+    #         if (ind%2 == 0)&(ind!=0):
+    #             intermediate = tf.stack([padded_data[ind], padded_data[ind+1]], axis=2)
+    #             watched_input_critic = tf.concat([watched_input_critic, intermediate], axis=1)
+    #
+    #     qvals = critic(watched_input_critic)
+    #     dq_da = tape.gradient(qvals, actions_indexed)
+
     dq_da = critic_grad_tf(critic, experiences)
-
+    #
+    # with tf.GradientTape() as tape:
+    #     tape.watch(actor.trainable_variables)
+    #     pads = np.ones(len(experiences)).astype(np.float32)*actor.pad_value
+    #     news = np.random.rand(experiences.shape[0], experiences.shape[1]+1).astype(np.float32)
+    #     news[:,1:] = experiences
+    #     news[:,0] = pads
+    #     instances_actor = [i for i in range(0,2*actor.dolinar_layers,2)]
+    #     actionss = actor(np.reshape(news[:,instances_actor], (experiences.shape[0],actor.dolinar_layers,1)).astype(np.float32))
+    #     da_dtheta = tape.gradient(actionss, actor.trainable_variables, output_gradients=-dq_da)
+    #
+    #
+    # optimizer_actor.apply_gradients(zip(da_dtheta, actor.trainable_variables))
     actor_grad_tf(actor, dq_da, experiences, optimizer_actor)
-
     actor.lstm.stateful=True
     return loss_critic
 
@@ -161,6 +193,15 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
     ##### STORING FOLDER ####
     ##### STORING FOLDER ####
 
+    # actions = {}
+    # for layer in range(dolinar_layers+1):
+    #     actions[str(layer)] = {}
+    #
+    # for k in outcomes_universe(dolinar_layers):
+    #     for layer in range(dolinar_layers+1):
+    #         actions[str(layer)][str(k[:layer])] = []
+
+    #######
     at = make_attenuations(dolinar_layers)
     for episode in tqdm(range(total_episodes)):
 
@@ -189,6 +230,8 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
         experiences.append(reward)
         buffer.add(tuple(experiences))
 
+        actor.lstm.reset_states()
+        actor.lstm.stateful=False
 
         rt.append(reward)
         pt.append(policy_evaluator.greedy_strategy(actor = actor, critic = critic))
@@ -197,24 +240,25 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
         ###### OPTIMIZATION STEP ######
         ###### OPTIMIZATION STEP ######
         ###### OPTIMIZATION STEP ######
-        # if (buffer.count>1):#(episode%100==1):
-            # sampled_experiences = buffer.sample(batch_size)
-            # np.save(str(dolinar_layers)+"_sample", sampled_experiences)
-        if (buffer.count>batch_size):#(episode%100==1):
+        if (buffer.count==15):#(episode%100==1):
             sampled_experiences = buffer.sample(batch_size)
+            np.save(str(dolinar_layers)+"_sample", sampled_experiences)
+        # if (buffer.count>100):#(episode%100==1):
+        #     sampled_experiences = buffer.sample(batch_size)
+        #     np.save(str(dolinar_layers)+"_sample", sampled_experiences)
+        #     new_loss = optimization_step(sampled_experiences, critic, critic_target, actor, actor_target, optimizer_critic, optimizer_actor)
+        #     critic_target.update_target_parameters(critic)
+        #     actor_target.update_target_parameters(actor)
+        #     noise_displacement = max(0.1,0.999*noise_displacement)
+        ###### OPTIMIZATION STEP ######
+        ###### OPTIMIZATION STEP ######
+        ###### OPTIMIZATION STEP ######
+        ###### OPTIMIZATION STEP ######
 
-            new_loss = optimization_step(sampled_experiences, critic, critic_target, actor, actor_target, optimizer_critic, optimizer_actor)
-            critic_target.update_target_parameters(critic)
-            actor_target.update_target_parameters(actor)
-            noise_displacement = max(0.1,0.999*noise_displacement)
-        ###### OPTIMIZATION STEP ######
-        ###### OPTIMIZATION STEP ######
-        ###### OPTIMIZATION STEP ######
-        ###### OPTIMIZATION STEP ######
         avg_train.append(new_loss)
+        #actor.lstm.reset_states()
+        actor.lstm.stateful=True
         actor.lstm.reset_states()
-
-         #set again the states to zero, because when actor.lstm.stateful = True, it does not reset state along differnt batches !
 
         # if episode%(total_episodes/100) == 0: #this is for showing 10 results in total.
         #
@@ -247,13 +291,13 @@ if __name__ == "__main__":
     info_run = ""
     to_csv=[]
     amplitude=0.4
-    tau = .005
-    lr_critic = 0.0001
-    lr_actor=0.0001
+    tau = .01
+    lr_critic = 0.01
+    lr_actor=0.01
     noise_displacement = .25
-    batch_size = 64.
+    batch_size = 128.
     ep_guess=0.01
-    dolinar_layers=3
+    dolinar_layers=2
     number_phases=2
 
 
