@@ -3,26 +3,47 @@ import matplotlib.pyplot as plt
 import numpy as np
 # from misc import Prob, ps_maxlik, qval
 
-def just_plot(rt, pt, avg_train, helstrom, directory):
+def just_plot(rt, pt, avg_train, helstrom, policy_evaluator, directory):
     matplotlib.rc('font', serif='cm10')
-    plt.rcParams.update({'font.size': 40})
-    plt.figure(figsize=(60,60), dpi=150)
-    ax1=plt.subplot2grid((1,2),(0,0))
-    ax2=plt.subplot2grid((1,2),(0,1))
+    plt.rcParams.update({'font.size': 100})
+    plt.figure(figsize=(150,150), dpi=150)
+    ax1=plt.subplot2grid((1,3),(0,0))
+    ax2=plt.subplot2grid((1,3),(0,1))
+    ax3=plt.subplot2grid((1,3),(0,2))
+
 
     T=len(rt)
+    optimal = 0.8091188035649798
+    optimal_beta= -0.7499999999999993
+
     ax1.plot(np.log10(np.arange(1,T+1)),rt, color="red", linewidth=15, alpha=0.8, label=r'$R_t$')
     ax1.plot(np.log10(np.arange(1,T+1)),helstrom*np.ones(T), color="black",  linewidth=15,alpha=0.5, label="Helstrom Bound")
+    ax1.plot(np.log10(np.arange(1,T+1)),helstrom*np.ones(T), color="black",  linewidth=15,alpha=0.5, label="Optimal 1L" +r'$\alpha = 0.4$')
     ax1.plot(np.log10(np.arange(1,T+1)),pt, color="blue", linewidth=15, alpha=0.8, label=r'$P_t$')
 
-    ax2.plot(np.arange(1,len(avg_train)+1),avg_train, color="black", linewidth=15, alpha=0.8, label="Critic's loss")
+    outcomes_so_far=[]
+    layer=0
+    betas_would_do = policy_evaluator.recorded_trajectory_tree_would_do[str(layer)][str(np.array(outcomes_so_far))]
+    betas_done = policy_evaluator.recorded_trajectory_tree[str(layer)][str(np.array(outcomes_so_far))]
 
-    for ax in [ax1, ax2]:
-        ax.legend()
+
+    ax2.plot(np.arange(1,len(betas_would_do)+1), betas_would_do, color="blue", linewidth=15, alpha=0.5, label="First beta would do")
+    ax2.plot(np.arange(1,len(betas_would_do)+1), betas_done, '--', color="red", linewidth=15, alpha=0.5, label="First beta have done")
+
+    ax2.plot(np.arange(1, len(betas_would_do)+1),np.ones(len(betas_would_do))*optimal_beta, color="black", linewidth=15, alpha=0.8, label="optimal-beta")
+    ax2.plot(np.arange(1, len(betas_would_do)+1),-np.ones(len(betas_would_do))*optimal_beta, color="black", linewidth=15, alpha=0.8)#, label="optimal-beta")
+
+
+    ax3.plot(np.arange(1,len(avg_train)+1),avg_train, color="black", linewidth=15, alpha=0.8, label="Critic's loss")
+
+
+
+    for ax in [ax1, ax2, ax3]:
+        ax.legend(prop={"size":60})
 
     ax1.set_xticks(range(int(np.log10(len(rt)))))
     tticks=[]
-    for k in range(int(np.log10(len(rt)))):
+    for k in range(int(np.log10(len(rt)+1))):
         tticks.append("10^"+str(k))
     ax1.set_xticklabels(tticks)
 

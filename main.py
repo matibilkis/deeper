@@ -18,7 +18,7 @@ from buffer import ReplayBuffer
 
 
 
-@tf.function
+#@tf.function
 def step_critic_tf(batched_input,labels_critic, critic, optimizer_critic):
     with tf.GradientTape() as tape:
         tape.watch(critic.trainable_variables)
@@ -29,7 +29,7 @@ def step_critic_tf(batched_input,labels_critic, critic, optimizer_critic):
         optimizer_critic.apply_gradients(zip(grads, critic.trainable_variables))
         return tf.squeeze(loss_critic)
 
-@tf.function
+#@tf.function
 def critic_grad_tf(critic, experiences):
     with tf.GradientTape() as tape:
         unstacked_exp = tf.unstack(tf.convert_to_tensor(experiences), axis=1)
@@ -57,7 +57,7 @@ def critic_grad_tf(critic, experiences):
         dq_da = tape.gradient(qvals, actions_indexed)
         return dq_da
 
-@tf.function
+#@tf.function
 def actor_grad_tf(actor, dq_da, experiences, optimizer_actor):
     unstacked_exp = tf.unstack(experiences, axis=1)
     actions_per_episode={}
@@ -93,7 +93,7 @@ def actor_grad_tf(actor, dq_da, experiences, optimizer_actor):
 
 
 
-@tf.function
+#@tf.function
 def optimization_step(experiences, critic, critic_target, actor, actor_target, optimizer_critic, optimizer_actor):
     # actor.lstm.reset_states()
     actor.lstm.stateful=False
@@ -166,17 +166,22 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
         env.pick_phase()
         experiences=[] #where the current history of the current episode is stored
         context_outcome_actor = np.reshape(np.array([actor.pad_value]),(1,1,1)).astype(np.float32)
+        outcomes_so_far = []
         for layer in range(actor.dolinar_layers):
             beta_would_do = np.squeeze(actor(context_outcome_actor))
             beta =  beta_would_do + np.random.uniform(-noise_displacement, noise_displacement)#np.clip(,-2*amplitude,2*amplitude)
+            policy_evaluator.recorded_trajectory_tree[str(layer)][str(np.array(outcomes_so_far))].append(beta)
+            policy_evaluator.recorded_trajectory_tree_would_do[str(layer)][str(np.array(outcomes_so_far))].append(beta_would_do)
+
             outcome = env.give_outcome(beta,layer)
+            outcomes_so_far.append(int(outcome))
             experiences.append(beta)
             experiences.append(outcome)
             context_outcome_actor = np.reshape(np.array([outcome]),(1,1,1)).astype(np.float32)
 
         ### ep-gredy guessing of the phase###
         ### ep-gredy guessing of the phase###
-        if np.random.random()< 1:
+        if np.random.random()<ep_guess:
             val = np.random.choice(range(number_phases),1)[0]
             guess_index, guess_input_network = val, val/critic.number_phases
             # print(guess_input_network)
@@ -206,7 +211,7 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
             new_loss = new_loss.numpy()
             critic_target.update_target_parameters(critic)
             actor_target.update_target_parameters(actor)
-            noise_displacement = max(0.1,0.999*noise_displacement)
+            # noise_displacement = max(0.1,0.999*noise_displacement)
         ###### OPTIMIZATION STEP ######
         ###### OPTIMIZATION STEP ######
         ###### OPTIMIZATION STEP ######
@@ -235,10 +240,11 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
 
     np.save(directory+"/learning_curves/", rrt)
     np.save(directory+"/learning_curves/", pt)
+    policy_evaluator.save_hisory_tree(directory+"/action_trees")
 
     for model, net_folder in zip([actor, actor_target, critic, critic_target],["actor_primary", "actor_target", "critic_primary", "critic_target"]):
         model.save_weights(directory+"/networks/"+net_folder+"/")
-    just_plot(rrt, pt, avg_train, env.helstrom(), directory)
+    just_plot(rrt, pt, avg_train, env.helstrom(), policy_evaluator, directory)
     # BigPlot(buffer,rt, pt, history_betas, history_betas_would_have_done, histo_preds, losses, directory)
     return
 
@@ -248,17 +254,19 @@ if __name__ == "__main__":
     to_csv=[]
     amplitude=0.4
     tau = .01
-    lr_critic = 0.001
+    lr_critic = 0.0001
     lr_actor=0.001
-    noise_displacement = .25
-    batch_size = 128.
+    noise_displacement = .1
     ep_guess=0.01
     dolinar_layers=2
     number_phases=2
 
+    for buffer_size in [5000., 1000.]:
 
-    name_run = RDPG(amplitude=amplitude, total_episodes=10**4, dolinar_layers=dolinar_layers, noise_displacement=noise_displacement, tau=tau,
-    buffer_size=10**8, batch_size=batch_size, lr_critic=lr_critic, lr_actor=lr_actor, ep_guess=ep_guess)
+        for batch_size in [8.]:
+
+            name_run = RDPG(amplitude=amplitude, total_episodes=10**2, dolinar_layers=dolinar_layers, noise_displacement=noise_displacement, tau=tau,
+        buffer_size=buffer_size, batch_size=batch_size, lr_critic=lr_critic, lr_actor=lr_actor, ep_guess=ep_guess)
 
     info_run +="***\n***\nname_run: {} ***\ntau: {}\nlr_critic: {}\nnoise_displacement: {}\nbatch_size: {}\n-------\n-------\n\n".format(name_run,tau, lr_critic, noise_displacement, batch_size)
 
@@ -271,3 +279,8 @@ if __name__ == "__main__":
     ##### if we put more runs... ###
     # pp = pd.DataFrame(to_csv)
     # pp.to_csv("results/panda_info.csv")
+
+
+##################time 10**4  without tf.function ################
+###with tf.function 22 min 10**4, batch_size =8
+#### without batch 16- 1.10 hours, 32. takes ~2 hourse, 64 ~ 3hourse, 128>5 hourse

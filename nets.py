@@ -3,7 +3,7 @@ from tensorflow.keras.layers import Dense
 import numpy as np
 
 class Critic(tf.keras.Model):
-    def __init__(self,nature, valreg=0.01, seed_val=.1, pad_value=-7., dolinar_layers=2, tau=0.01, number_phases=2):
+    def __init__(self,nature, valreg=0.01, seed_val=.05, pad_value=-7., dolinar_layers=2, tau=0.01, number_phases=2):
         '''
         dolinar_layers= number of photodetections
         pad_value: value not considered by the lstm
@@ -93,7 +93,7 @@ class Critic(tf.keras.Model):
         return rr, rewards_obtained
 
 
-    @tf.function
+    #@tf.function
     def process_sequence_tf(self, sample_buffer):
         """Ths function just reshapes (and pads) the aray of experiences (transform the vector
         or collection of vectors to a tensor of batchedd inputs and another tensor of zeroed rewards.
@@ -107,7 +107,7 @@ class Critic(tf.keras.Model):
 
 
 
-    @tf.function
+    #@tf.function
     def give_td_errors_tf(self,sequences,zeroed_rews):
         """Gives the td_errors, notice we don't use lstm.stateful 'cause we process
         all the sequence (see the ** marks)
@@ -166,7 +166,7 @@ class Critic(tf.keras.Model):
 
 ##### ACTOR CLASSS ####
 class Actor(tf.keras.Model):
-    def __init__(self, nature, valreg=0.01, seed_val=0.1, pad_value = -7.,
+    def __init__(self, nature, valreg=0.01, seed_val=0.01, pad_value = -7.,
                  dolinar_layers=2,tau=0.01):
         super(Actor,self).__init__()
         self.dolinar_layers = dolinar_layers
@@ -247,7 +247,7 @@ class Actor(tf.keras.Model):
 
         return export
 
-    @tf.function
+    #@tf.function
     def process_sequence_of_experiences_tf(self, experiences):
 
         unstacked_exp = tf.unstack(tf.convert_to_tensor(experiences), axis=1)

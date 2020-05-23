@@ -3,7 +3,7 @@ import os
 import random
 import cmath
 from math import erf
-
+import pickle
 
 def P(a,b,et,n):
 
@@ -143,18 +143,39 @@ class PolicyEvaluator(Basics):
         super().__init__(amplitude=amplitude, dolinar_layers=dolinar_layers, number_phases=number_phases)
 
         displacement_tree = {}
+        trajectory_tree = {}
         #self.at = make_attenuations(self.number_layers)
         for layer in range(self.dolinar_layers+1):
             displacement_tree[str(layer)] = {}
+            trajectory_tree[str(layer)] = {}
 
         for k in outcomes_universe(self.dolinar_layers):
             for layer in range(self.dolinar_layers+1):
-                displacement_tree[str(layer)][str(k[:layer])] = 0
+                displacement_tree[str(layer)][str(k[:layer])] = 0.
+                trajectory_tree[str(layer)][str(k[:layer])] = []
 
-        self.displacement_tree = displacement_tree
+        self.history_tree = displacement_tree
+        self.recorded_trajectory_tree = trajectory_tree
+        self.recorded_trajectory_tree_would_do = trajectory_tree.copy()
+
+    def save_hisory_tree(self, directory):
+        output = open(directory+"/history_tree.pkl", "wb")
+        pickle.dump(self.recorded_trajectory_tree, output)
+        output.close()
+        output = open(directory+"/history_tree_would_do.pkl", "wb")
+        pickle.dump(self.recorded_trajectory_tree_would_do, output)
+        output.close()
+
+    def load_history_tree(self, directory):
+        opp = open(directory+"/history_tree.pkl", "rb")
+        self.recorded_trajectory_tree_loaded = pickle.load(opp)
+        opp = open(directory+"/history_tree_would_do.pkl", "rb")
+        self.recorded_trajectory_tree_loaded_would_do = pickle.load(opp)
+        print("recorded_trajectory_tree_loaded")
+        return
 
     def random_tree(self):
-        actions = self.displacement_tree.copy()
+        actions = self.history_tree.copy()
         for k in outcomes_universe(self.dolinar_layers):
             for layer in range(self.dolinar_layers+1):
                 actions[str(layer)][str(k[:layer])] = np.random.random()
@@ -193,7 +214,7 @@ class PolicyEvaluator(Basics):
 
         for ot, seqot in zip(outcomes_universe(self.dolinar_layers-1), preds):
             for layer in range(self.dolinar_layers):
-                self.displacement_tree[str(layer)][str(ot[:layer])] = seqot[layer]
+                self.history_tree[str(layer)][str(ot[:layer])] = seqot[layer]
 
             history = []
             index_seqot, index_ot= 0, 0
@@ -206,9 +227,9 @@ class PolicyEvaluator(Basics):
                     index_ot+=1
             for final_outcome in [0,1]:
                 final_history = np.append(history, final_outcome)
-                self.displacement_tree[str(self.dolinar_layers)][str(np.append(ot,final_outcome))] = self.possible_phases[critic.give_favourite_guess(final_history)[0]]
+                self.history_tree[str(self.dolinar_layers)][str(np.append(ot,final_outcome))] = self.possible_phases[critic.give_favourite_guess(final_history)[0]]
 
-        return self.success_probability(self.displacement_tree)
+        return self.success_probability(self.history_tree)
 
 def record():
     if not os.path.exists("results/number_rune.txt"):
@@ -229,6 +250,7 @@ def record():
     if not os.path.exists("run_"+str(number_run)):
         os.makedirs("results/run_"+str(number_run))
         os.makedirs("results/run_"+str(number_run)+"/learning_curves")
+        os.makedirs("results/run_"+str(number_run)+"/action_trees")
 
         for net in ["actor_primary", "actor_target", "critic_primary", "critic_target"]:
             os.makedirs("results/run_"+str(number_run)+"/networks/"+net)
