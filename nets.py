@@ -18,8 +18,9 @@ class Critic(tf.keras.Model):
         self.nature = nature
         self.dolinar_layers = dolinar_layers
         self.mask = tf.keras.layers.Masking(mask_value=pad_value,
-                                  input_shape=(self.dolinar_layers, 2)) #(beta1, pad), (n1, beta2), (n2, guess). In general i will have (layer+1)
-        self.lstm = tf.keras.layers.LSTM(500, return_sequences=True)
+                                    input_shape=(None, 2))
+                                  # input_shape=(self.dolinar_layers, 2)) #(beta1, pad), (n1, beta2), (n2, guess). In general i will have (layer+1)
+        self.lstm = tf.keras.layers.LSTM(500, return_sequences=True, input_shape=(None,2)) #input_shape = (time_steps, features)
 
         self.tau = tau
         self.l1 = Dense(500,kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
@@ -93,7 +94,7 @@ class Critic(tf.keras.Model):
         return rr, rewards_obtained
 
 
-    #@tf.function
+    @tf.function
     def process_sequence_tf(self, sample_buffer):
         """Ths function just reshapes (and pads) the aray of experiences (transform the vector
         or collection of vectors to a tensor of batchedd inputs and another tensor of zeroed rewards.
@@ -107,7 +108,7 @@ class Critic(tf.keras.Model):
 
 
 
-    #@tf.function
+    @tf.function
     def give_td_errors_tf(self,sequences,zeroed_rews):
         """Gives the td_errors, notice we don't use lstm.stateful 'cause we process
         all the sequence (see the ** marks)
@@ -177,16 +178,16 @@ class Actor(tf.keras.Model):
 
         if nature == "primary":
             self.dropout_rate = 0.1
-            self.lstm = tf.keras.layers.LSTM(500, return_sequences=True, stateful=True)
+            self.lstm = tf.keras.layers.LSTM(500, return_sequences=True, stateful=True, input_shape=(None, 1))
             self.mask = tf.keras.layers.Masking(mask_value=pad_value,
-                                  input_shape=(1,1))#CHECK
+                                  input_shape=(None,1))
 
 
         elif nature == "target":
             self.dropout_rate = 0.
-            self.lstm = tf.keras.layers.LSTM(500, return_sequences=True, stateful=True)
+            self.lstm = tf.keras.layers.LSTM(500, return_sequences=True, stateful=True, input_shape=(None, 1))
             self.mask = tf.keras.layers.Masking(mask_value=pad_value,
-                                  input_shape=(1,1))#CHECK
+                                  input_shape=(None,1))
 
             #
             # self.lstm = tf.keras.layers.LSTM(500, return_sequences=True, stateful=False)
@@ -247,7 +248,7 @@ class Actor(tf.keras.Model):
 
         return export
 
-    #@tf.function
+    @tf.function
     def process_sequence_of_experiences_tf(self, experiences):
 
         unstacked_exp = tf.unstack(tf.convert_to_tensor(experiences), axis=1)
@@ -257,7 +258,6 @@ class Actor(tf.keras.Model):
                 to_stack.append(unstacked_exp[index])
             if (index%2 == 1):
                 to_stack.append(unstacked_exp[index])
-
                 to_stack.append(tf.squeeze(self(tf.reshape(unstacked_exp[index],(experiences.shape[0],1,1)))))
         for index in range(2*self.dolinar_layers-1, 2*self.dolinar_layers+2):
             to_stack.append(unstacked_exp[index])
