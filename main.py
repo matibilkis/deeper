@@ -59,19 +59,16 @@ def critic_grad_tf(critic, experiences):
 
 @tf.function
 def actor_grad_tf(actor, dq_da, experiences, optimizer_actor):
-    actor.lstm.stateful=False
     with tf.GradientTape() as tape:
         tape.watch(actor.trainable_variables)
-        finns = [tf.ones((experiences.shape[0], 1,1))*actor.pad_value]
+        finns = [actor(tf.ones((experiences.shape[0], 1,1))*actor.pad_value)]
         unstacked_exp = tf.unstack(experiences, axis=1)
         for index in range(1,2*actor.dolinar_layers-2,2):
-            finns.append(tf.reshape(unstacked_exp[index], (experiences.shape[0], 1,1)))
+            finns.append(actor(tf.reshape(unstacked_exp[index], (experiences.shape[0], 1,1))))
         final_preds = tf.concat(finns, axis=1)
         final_preds = actor(final_preds)
         da_dtheta=tape.gradient(final_preds, actor.trainable_variables, output_gradients=-dq_da)
         optimizer_actor.apply_gradients(zip(da_dtheta, actor.trainable_variables))
-    actor.lstm.stateful=True
-
     return
 
 
@@ -185,8 +182,14 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
         if (buffer.count>batch_size):#(episode%100==1):
             sampled_experiences = tf.convert_to_tensor(buffer.sample(batch_size), dtype=np.float32)
 
+            actor.lstm.stateful=False
+            actor.reset_states_workaround(new_batch_size=int(batch_size))
+
             new_loss = optimization_step(sampled_experiences, critic, critic_target, actor, actor_target, optimizer_critic, optimizer_actor)
             new_loss = new_loss.numpy()
+            actor.reset_states_workaround(new_batch_size=1)
+            actor.lstm.stateful=True
+
             critic_target.update_target_parameters(critic)
             actor_target.update_target_parameters(actor)
             # noise_displacement = max(0.1,0.999*noise_displacement)

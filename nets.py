@@ -60,10 +60,9 @@ class Critic(tf.keras.Model):
     def call(self, inputs):
         feat = self.mask(inputs)
         feat= self.lstm(feat)
-
-        # feat = tf.nn.dropout(feat, rate=0.01)
+        feat = tf.nn.dropout(feat, rate=0.01)
         feat = tf.nn.relu(self.l1(feat))
-        # feat = tf.nn.dropout(feat, rate=0.01)
+        feat = tf.nn.dropout(feat, rate=0.01)
         feat = tf.nn.relu(self.l2(feat))
         feat = tf.nn.relu(self.l3(feat))
         feat = tf.nn.sigmoid(self.l4(feat))
@@ -175,37 +174,32 @@ class Actor(tf.keras.Model):
         self.nature = nature
         self.tau = tau
 
+        self.output_lstm = 500
+        self.lstm = tf.keras.layers.LSTM(self.output_lstm, return_sequences=True, stateful=True, batch_size=None, input_shape=(None,None,1))
+        self.mask = tf.keras.layers.Masking(mask_value=pad_value, input_shape=(None,1))
 
         if nature == "primary":
             self.dropout_rate = 0.1
-            self.lstm = tf.keras.layers.LSTM(500, return_sequences=True, stateful=True, input_shape=(None, 1))
-            self.mask = tf.keras.layers.Masking(mask_value=pad_value,
-                                  input_shape=(None,1))
-
-
         elif nature == "target":
             self.dropout_rate = 0.
-            self.lstm = tf.keras.layers.LSTM(500, return_sequences=True, stateful=True, input_shape=(None, 1))
-            self.mask = tf.keras.layers.Masking(mask_value=pad_value,
-                                  input_shape=(None,1))
-
-            #
-            # self.lstm = tf.keras.layers.LSTM(500, return_sequences=True, stateful=False)
-            # self.mask = tf.keras.layers.Masking(mask_value=pad_value, input_shape=(1,1))
-            #                       input_shape=(self.dolinar_layers, 1)) #'cause i feed altoghether.
         else:
             print("Hey! the character is either primary or target")
-        self.l1 = Dense(500,kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
+
+        #     self.lstm = tf.keras.layers.LSTM(500, return_sequences=True, stateful=True)
+        #     # self.mask = tf.keras.layers.Masking(mask_value=pad_value, input_shape=(self.dolinar_layers, 1))
+
+
+        self.l1 = Dense(300,kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
         bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
         kernel_regularizer=tf.keras.regularizers.l1(valreg),
-    activity_regularizer=tf.keras.regularizers.l2(valreg), dtype='float32')
+        activity_regularizer=tf.keras.regularizers.l2(valreg), dtype='float32')
 
-        self.l2 = Dense(300, kernel_regularizer=tf.keras.regularizers.l1(valreg),
+        self.l2 = Dense(100, kernel_regularizer=tf.keras.regularizers.l1(valreg),
     activity_regularizer=tf.keras.regularizers.l2(valreg),
     kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
     bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val), dtype='float32')
 
-        self.l3 = Dense(300, kernel_regularizer=tf.keras.regularizers.l1(valreg),
+        self.l3 = Dense(10, kernel_regularizer=tf.keras.regularizers.l1(valreg),
     activity_regularizer=tf.keras.regularizers.l2(valreg),
     kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
     bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val), dtype='float32')
@@ -215,6 +209,11 @@ class Actor(tf.keras.Model):
     kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
     bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val), dtype='float32')
 
+
+    def reset_states_workaround(self, new_batch_size=1):
+        self.lstm.states = [tf.Variable(tf.zeros((new_batch_size,self.output_lstm))), tf.Variable(tf.zeros((new_batch_size,self.output_lstm)))]
+        self.lstm.input_spec = [tf.keras.layers.InputSpec(shape=(new_batch_size,None,1), ndim=3)]
+        return
 
 
     def update_target_parameters(self,primary_net):
@@ -228,7 +227,7 @@ class Actor(tf.keras.Model):
 
     def call(self, inputs):
         feat = self.mask(inputs)
-        feat= self.lstm(feat)
+        feat= self.lstm(inputs)
         feat = tf.nn.dropout(feat, rate=self.dropout_rate)
         feat = tf.nn.relu(self.l1(feat))
         feat = tf.nn.dropout(feat, rate=self.dropout_rate)
@@ -238,15 +237,13 @@ class Actor(tf.keras.Model):
         feat = tf.clip_by_value(feat, -1.0, 1.0)
         return feat
 
-    def process_sequence_of_experiences(self, experiences):
-        self.lstm.stateful=True
-        export = experiences.copy()
-        for index in range(1,2*self.dolinar_layers-1,2): # I consider from first outcome to last one (but guess)
-            export[:,index+1] = np.squeeze(self(np.reshape(np.array(export[:,index]),
-                                                                 (experiences.shape[0],1,1))))
-        self.lstm.stateful=False
-
-        return export
+    # def process_sequence_of_experiences(self, experiences):
+    #     export = experiences.copy()
+    #     for index in range(1,2*self.dolinar_layers-1,2): # I consider from first outcome to last one (but guess)
+    #         export[:,index+1] = np.squeeze(self(np.reshape(np.array(export[:,index]),
+    #                                                              (experiences.shape[0],1,1))))
+    #
+    #     return export
 
     @tf.function
     def process_sequence_of_experiences_tf(self, experiences):
@@ -261,7 +258,11 @@ class Actor(tf.keras.Model):
                 to_stack.append(tf.squeeze(self(tf.reshape(unstacked_exp[index],(experiences.shape[0],1,1)))))
         for index in range(2*self.dolinar_layers-1, 2*self.dolinar_layers+2):
             to_stack.append(unstacked_exp[index])
-        self.lstm.reset_states()
+
+        if self.dolinar_layers>1:
+            self.reset_states() #otherwise is like not doing anything so no problem :-)
+        else:
+            self(tf.reshape(unstacked_exp[1],(experiences.shape[0],1,1))) #just call it once to initialize
 
         return tf.stack(to_stack, axis=1)
 

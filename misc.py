@@ -205,29 +205,47 @@ class PolicyEvaluator(Basics):
             self.possible_phases are the possible phases of the coherent states
 
         """
+        # if self.dolinar_layers == 1:
+        #     rr = np.ones((2**(self.dolinar_layers-1), self.dolinar_layers, 1))*actor.pad_value
+        #     actor.lstm.stateful = False
+        #     preds = np.squeeze(actor(rr))
+        #     actor.lstm.stateful = True
+        #
+        #     return
         rr = np.ones((2**(self.dolinar_layers-1), self.dolinar_layers, 1))*actor.pad_value
-        rr[:,1:] = np.reshape(outcomes_universe(self.dolinar_layers-1),(2**(self.dolinar_layers-1), self.dolinar_layers-1,1))
+        if self.dolinar_layers != 1:
+            rr[:,1:] = np.reshape(outcomes_universe(self.dolinar_layers-1),(2**(self.dolinar_layers-1), self.dolinar_layers-1,1))
 
         actor.lstm.stateful = False
         preds = np.squeeze(actor(rr))
         actor.lstm.stateful = True
 
-        for ot, seqot in zip(outcomes_universe(self.dolinar_layers-1), preds):
-            for layer in range(self.dolinar_layers):
-                self.history_tree[str(layer)][str(ot[:layer])] = seqot[layer]
-
-            history = []
-            index_seqot, index_ot= 0, 0
-            for index_history in range(2*self.dolinar_layers-1):
-                if index_history%2==0:
-                    history.append(seqot[index_seqot])
-                    index_seqot+=1
-                else:
-                    history.append(ot[index_ot])
-                    index_ot+=1
+        if self.dolinar_layers==1:
+            history = preds
+            self.history_tree[str(0)][str([])] = preds
             for final_outcome in [0,1]:
                 final_history = np.append(history, final_outcome)
-                self.history_tree[str(self.dolinar_layers)][str(np.append(ot,final_outcome))] = self.possible_phases[critic.give_favourite_guess(final_history)[0]]
+                self.history_tree[str(self.dolinar_layers)][str(final_outcome)] = self.possible_phases[critic.give_favourite_guess(final_history)[0]]
+            return self.success_probability(self.history_tree)
+        else:
+
+            for ot, seqot in zip(outcomes_universe(self.dolinar_layers-1), preds):
+                for layer in range(self.dolinar_layers):
+                    self.history_tree[str(layer)][str(ot[:layer])] = seqot[layer]
+
+                history = []
+                index_seqot, index_ot= 0, 0
+                for index_history in range(2*self.dolinar_layers-1):
+                    if index_history%2==0:
+                        history.append(seqot[index_seqot])
+                        index_seqot+=1
+                    else:
+                        history.append(ot[index_ot])
+                        index_ot+=1
+                for final_outcome in [0,1]:
+                    final_history = np.append(history, final_outcome)
+                    self.history_tree[str(self.dolinar_layers)][str(np.append(ot,final_outcome))] = self.possible_phases[critic.give_favourite_guess(final_history)[0]]
+
 
         return self.success_probability(self.history_tree)
 
