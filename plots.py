@@ -6,7 +6,7 @@ import numpy as np
 def just_plot(rt, pt, avg_train, helstrom, policy_evaluator, directory):
     matplotlib.rc('font', serif='cm10')
     plt.rcParams.update({'font.size': 100})
-    plt.figure(figsize=(150,150), dpi=150)
+    plt.figure(figsize=(150,150), dpi=50)
     ax1=plt.subplot2grid((1,3),(0,0))
     ax2=plt.subplot2grid((1,3),(0,1))
     ax3=plt.subplot2grid((1,3),(0,2))
@@ -28,7 +28,7 @@ def just_plot(rt, pt, avg_train, helstrom, policy_evaluator, directory):
 
 
     ax2.plot(np.arange(1,len(betas_would_do)+1), betas_would_do, color="blue", linewidth=15, alpha=0.5, label="First beta would do")
-    ax2.plot(np.arange(1,len(betas_would_do)+1), betas_done, '--', color="red", linewidth=15, alpha=0.5, label="First beta have done")
+    ax2.plot(np.arange(1,len(betas_would_do)+1), betas_done, '-', color="red", linewidth=10, alpha=0.8, label="First beta have done")
 
     ax2.plot(np.arange(1, len(betas_would_do)+1),np.ones(len(betas_would_do))*optimal_beta, color="black", linewidth=15, alpha=0.8, label="optimal-beta")
     ax2.plot(np.arange(1, len(betas_would_do)+1),-np.ones(len(betas_would_do))*optimal_beta, color="black", linewidth=15, alpha=0.8)#, label="optimal-beta")

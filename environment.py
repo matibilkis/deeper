@@ -40,9 +40,6 @@ class Environment(misc.Basics):
         Eq (9) M-ary-state phase-shift-keying discrimination below the homodyne limit
         F. E. Becerra,1,* J. Fan,1 G. Baumgartner,2 S. V. Polyakov,1 J. Goldhar,3 J. T. Kosloski,4 and A. Migdall1
         """
-        if self.dolinar_layers ==1:
-            return 1-np.min(self.err_kennedy(self.actions[0]))
-
         nsig=self.amplitude**2
         number_states=self.number_phases
 
@@ -69,12 +66,23 @@ class Environment(misc.Basics):
         return random.choices([0.,1.],weights=probs)[0]
 
 
-    def give_reward(self, guess):
+    def give_reward(self, guess, modality="bit_stochastic", history=[]):
         """We put label_phase to avoid problems
         with the np.round we applied to complex phases"""
         # if (self.flipped):
         #     self.label_phase = np.where(self.possible_phases == -self.phase)[0][0]
-        if guess == self.label_phase:
-            return 1
+        if modality=="bit_stochastic":
+
+            if guess == self.label_phase:
+                return 1
+            else:
+                return 0
+
         else:
-            return 0
+            prob=1
+            phase_guess=self.possible_phases[guess]
+            for layer in range(int(len(history)/2)):
+                effective_attenuation = np.prod(np.sin(self.at[:layer]))*np.cos(self.at[layer])#Warning one!
+                prob*=self.P(phase_guess*self.amplitude, history[layer], effective_attenuation, history[layer+1])
+            return prob
+            #I take a history of #(beta, outcome, beta, outcome)...

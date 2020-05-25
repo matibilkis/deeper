@@ -3,7 +3,7 @@ from tensorflow.keras.layers import Dense
 import numpy as np
 
 class Critic(tf.keras.Model):
-    def __init__(self,nature, valreg=0.01, seed_val=.05, pad_value=-7., dolinar_layers=2, tau=0.01, number_phases=2):
+    def __init__(self,nature, valreg=0.01, seed_val=.1, pad_value=-7., dolinar_layers=2, tau=0.01, number_phases=2):
         '''
         dolinar_layers= number of photodetections
         pad_value: value not considered by the lstm
@@ -159,6 +159,14 @@ class Critic(tf.keras.Model):
         guess = np.squeeze(tf.argmax(predsq, axis=0))
         input_netork_guess = guess/self.number_phases
         return guess, input_netork_guess
+    #
+    # def give_max_lik_guess(self, history):
+    #     prob=np.ones(self.number_phases)
+    #     for layer in range(int(len(history)/2)):
+    #         effective_attenuation = np.prod(np.sin(self.at[:layer]))*np.cos(self.at[layer])#Warning one!
+    #         prob*=np.array([self.P(phase_guess*self.amplitude, history[layer], effective_attenuation, history[layer+1]) for
+    #                         phase_guess in self.possible_phases])
+    #     return self.possible_phases[np.argmax(prob)]
 
 
 
@@ -234,7 +242,7 @@ class Actor(tf.keras.Model):
         feat = tf.nn.relu(self.l2(feat))
         feat = tf.nn.relu(self.l3(feat))
         feat = tf.nn.tanh(self.l4(feat))
-        feat = tf.clip_by_value(feat, -1.0, 1.0)
+        feat = tf.clip_by_value(feat, 0.0, 1.0)
         return feat
 
     # def process_sequence_of_experiences(self, experiences):
