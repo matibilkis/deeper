@@ -87,15 +87,13 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
         ### ep-gredy guessing of the phase###
         # ### ep-gredy guessing of the phase###
         if np.random.random()<0.3:
-            val = np.random.choice(range(number_phases),1)[0]
-            guess_index, guess_input_network = val, val/critic.number_phases
-
+            guess_index = np.random.choice(range(number_phases),1)[0]
+            # guess_index, guess_phase = val, pol.possible_phases[val]
         else:
-            guess_index, guess_input_network = critic.give_favourite_guess(experiences) #experiences is the branch of the current tree of actions + outcomes.
-
+            guess_index = critic.give_favourite_guess(experiences) #experiences is the branch of the current tree of actions + outcomes.
         # guess_index, guess_input_network = policy_evaluator.give_max_lik_guess(history = experiences[:-1], return_index = True)
 
-        experiences.append(guess_input_network)
+        experiences.append(guess_index)
         reward = env.give_reward(guess_index, modality="probs", history = experiences[:-1])
 
         experiences.append(reward)

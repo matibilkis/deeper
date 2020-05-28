@@ -202,18 +202,19 @@ class PolicyEvaluator(Basics):
         return p/self.number_phases
 
 
-    def give_max_lik_guess(self, history, return_index = False):
+    def give_max_lik_guess(self, history):
         prob=np.ones(self.number_phases)
         for layer in range(int(len(history)/2)):
             effective_attenuation = np.prod(np.sin(self.at[:layer]))*np.cos(self.at[layer])#Warning one!
             prob*=np.array([self.P(phase_guess*self.amplitude, history[layer], effective_attenuation, history[layer+1]) for
                             phase_guess in self.possible_phases])
-        if return_index is True:
-            guess = np.argmax(prob)
-            guess_input_network = guess/self.number_phases
-            return guess, guess_input_network
-        else:
-            return self.possible_phases[np.argmax(prob)]
+        guess_index = np.argmax(prob)
+        return guess_index
+        # if return_index is True:
+        #     guess_index = np.argmax(prob)
+        #     return guess_index
+        # else:
+        #     return self.possible_phases[np.argmax(prob)]
 
     def greedy_strategy(self, actor, critic):
         """
@@ -235,11 +236,7 @@ class PolicyEvaluator(Basics):
             self.history_tree[str(0)][str([])] = preds
             for final_outcome in [[0], [1]]:
                 final_history = np.append(history, final_outcome)
-                #print(final_history)
-                #print(final_outcome)
-                #print(self.give_max_lik_guess(final_history))
-                #self.history_tree[str(self.dolinar_layers)][str(final_outcome)] = self.possible_phases[critic.give_favourite_guess(final_history)[0]]
-                self.history_tree[str(self.dolinar_layers)][str(final_outcome)] = self.give_max_lik_guess(final_history)
+                self.history_tree[str(self.dolinar_layers)][str(final_outcome)] = self.possible_phases[self.give_max_lik_guess(final_history)]
 
             return self.success_probability(self.history_tree)
         else:
@@ -260,7 +257,7 @@ class PolicyEvaluator(Basics):
                 for final_outcome in [[0],[1]]:
                     final_history = np.append(history, final_outcome)
                     #self.history_tree[str(self.dolinar_layers)][str(np.append(ot,final_outcome))] = self.possible_phases[critic.give_favourite_guess(final_history)[0]]
-                    self.history_tree[str(self.dolinar_layers)][str(np.append(ot,final_outcome))] = self.give_max_lik_guess(final_history)
+                    self.history_tree[str(self.dolinar_layers)][str(np.append(ot,final_outcome))] = self.possible_phases[self.give_max_lik_guess(final_history)]
 
 
         return self.success_probability(self.history_tree)
@@ -374,12 +371,16 @@ def actor_grad_tf(actor, dq_da, experiences, optimizer_actor):
         optimizer_actor.apply_gradients(zip(da_dtheta, actor.trainable_variables))
     return
 
-@tf.function
+# @tf.function
 def optimization_step(experiences, critic, critic_target, actor, actor_target, optimizer_critic, optimizer_actor):
     # actor.lstm.reset_states()
     # experiences = experiences.astype(np.float32)
     targeted_experience = actor_target.process_sequence_of_experiences_tf(experiences)
     sequences, zeroed_rews = critic_target.process_sequence_tf(targeted_experience)
+    print(critic.mask(sequences)._keras_mask)
+    print("******")
+    while True:
+        c=1
     labels_critic = critic_target.give_td_errors_tf( sequences, zeroed_rews)
 
     loss_critic = step_critic_tf(sequences ,labels_critic, critic, optimizer_critic)

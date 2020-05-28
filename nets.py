@@ -119,7 +119,7 @@ class Critic(tf.keras.Model):
         final_rews = tf.reshape(zeroed_rews[:,-1], (sequences.shape[0],1,1))
         bellman_tds_noguess = self(sequences)[:,1:-1,:] #**
 
-        phases = tf.range(self.number_phases, dtype=np.float32)/self.number_phases
+        # phases = tf.range(self.number_phases, dtype=np.float32)
 
         unstacked = tf.unstack(tf.convert_to_tensor(sequences))
         phases_concs = {}
@@ -130,7 +130,7 @@ class Critic(tf.keras.Model):
         for episode in unstacked:
             prefinal = episode[:-1]
             for ph in range(self.number_phases):
-                final = tf.expand_dims(tf.stack([tf.unstack(episode[-1])[0], phases[ph]], axis=0), axis=0)
+                final = tf.expand_dims(tf.stack([tf.unstack(episode[-1])[0], ph], axis=0), axis=0)
                 phases_concs[str(ph)].append(tf.concat([prefinal, final], axis=0))
         #
             for ph in range(self.number_phases):
@@ -153,24 +153,11 @@ class Critic(tf.keras.Model):
         """
         rr = np.random.randn(self.number_phases,2*self.dolinar_layers+1)
         rr[:,:-1] = hL
-        rr[:,-1] = np.arange(self.number_phases)/self.number_phases #just to keep the value in [0,1], don't know if it's important
+        rr[:,-1] = np.arange(self.number_phases) #just to keep the value in [0,1], don't know if it's important
         batched_all_guesses = np.reshape(rr[:,[-2,-1]],(self.number_phases, 1, 2))
         predsq = self(batched_all_guesses)
-        guess = np.squeeze(tf.argmax(predsq, axis=0))
-        input_netork_guess = guess/self.number_phases
-        return guess, input_netork_guess
-    #
-    # def give_max_lik_guess(self, history):
-    #     prob=np.ones(self.number_phases)
-    #     for layer in range(int(len(history)/2)):
-    #         effective_attenuation = np.prod(np.sin(self.at[:layer]))*np.cos(self.at[layer])#Warning one!
-    #         prob*=np.array([self.P(phase_guess*self.amplitude, history[layer], effective_attenuation, history[layer+1]) for
-    #                         phase_guess in self.possible_phases])
-    #     return self.possible_phases[np.argmax(prob)]
-
-
-
-
+        guess_index = np.squeeze(tf.argmax(predsq, axis=0))
+        return guess_index
 
 ##### ACTOR CLASSS ####
 class Actor(tf.keras.Model):
