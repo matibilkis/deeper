@@ -1,7 +1,48 @@
 import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
-# from misc import Prob, ps_maxlik, qval
+from misc import Prob, ps_maxlik, qval
+
+def profiles_kennedy(critic):
+    plt.figure(figsize=(15,10))
+
+
+    ax1 = plt.subplot2grid((2,2),(0,0))
+    ax2 = plt.subplot2grid((2,2),(0,1))
+    ax3 = plt.subplot2grid((2,2),(1,0), colspan=2)
+
+    betas = np.arange(.1,1.1,.05)
+    inps = np.stack([np.ones(len(betas))*critic.pad_value, betas], axis=1)
+    inps = np.reshape(inps, (len(betas),1,2))
+    ax3.plot(betas, np.squeeze(critic(inps)), '--', color="black", linewidth=5,label="RNN")
+
+    axes = {"0.0":ax1, "1.0":ax2}
+    for outcome in [0.,1.]:
+       for guess_index in [0.,1.]:
+            m=[]
+            for k in tf.unstack(inps):
+                m.append(tf.concat([k, np.reshape(np.array([outcome,guess_index]), (1,2))], axis=0))
+            axes[str(outcome)].plot(betas, np.squeeze(critic(tf.stack(m, axis=0)))[:,1], '--', color="black", linewidth=5,label="RNN")
+
+
+    ax1.plot(betas,[qval(b, 0, -1) for b in betas],alpha=0.5,c="red", linewidth=5, label="Q(n1=0,"+r'$\beta$'+"; g=-1)")
+    ax1.plot(betas,[qval(b, 0, 1) for b in betas],alpha=0.5,c="blue",  linewidth=5,label="Q(n1=0,"+r'$\beta$'+"; g=1)")
+
+    ax2.plot(betas,[qval(b, 1, -1) for b in betas],alpha=0.5,c="red", linewidth=5, label="Q(n1=0,"+r'$\beta$'+"; g=-1)")
+    ax2.plot(betas,[qval(b, 1, 1) for b in betas],alpha=0.5,c="blue",  linewidth=5,label="Q(n1=0,"+r'$\beta$'+"; g=1)")
+
+    ax3.plot(betas,ps_maxlik(betas), '--', linewidth=5, color="red", label="P*")
+
+    for ax in [ax1, ax2, ax3]:
+        ax.set_xlabel(r'$\beta$', size=20)
+        ax.legend(prop={"size":15})
+
+
+
+
+
+
+
 
 def just_plot(rt, pt, avg_train, helstrom, policy_evaluator, directory):
     matplotlib.rc('font', serif='cm10')

@@ -3,7 +3,7 @@ from tensorflow.keras.layers import Dense
 import numpy as np
 
 class Critic(tf.keras.Model):
-    def __init__(self,nature, valreg=0.01, seed_val=.1, pad_value=-7., dolinar_layers=2, tau=0.01, number_phases=2):
+    def __init__(self,nature, seed_val=.1, pad_value=-7., dolinar_layers=2, tau=0.01, number_phases=2, dropout_rate=0.0):
         '''
         dolinar_layers= number of photodetections
         pad_value: value not considered by the lstm
@@ -17,30 +17,23 @@ class Critic(tf.keras.Model):
         self.number_phases = number_phases
         self.nature = nature
         self.dolinar_layers = dolinar_layers
+        self.dropout_rate = dropout_rate
         self.mask = tf.keras.layers.Masking(mask_value=pad_value,
-                                    input_shape=(None, 2))
+                                    input_shape=(2, 2))
                                   # input_shape=(self.dolinar_layers, 2)) #(beta1, pad), (n1, beta2), (n2, guess). In general i will have (layer+1)
-        self.lstm = tf.keras.layers.LSTM(500, return_sequences=True, input_shape=(None,2)) #input_shape = (time_steps, features)
+        self.lstm = tf.keras.layers.LSTM(50, return_sequences=True, input_shape=(None,2)) #input_shape = (time_steps, features)
 
         self.tau = tau
-        self.l1 = Dense(500,kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
-        bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
-        kernel_regularizer=tf.keras.regularizers.l1(valreg),
-    activity_regularizer=tf.keras.regularizers.l2(valreg))
+        self.l1 = Dense(50,kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
+        bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val))
 
-        self.l2 = Dense(300, kernel_regularizer=tf.keras.regularizers.l1(valreg),
-    activity_regularizer=tf.keras.regularizers.l2(valreg),
-    kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
+        self.l2 = Dense(30, kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
     bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val))
 
-        self.l3 = Dense(300, kernel_regularizer=tf.keras.regularizers.l1(valreg),
-    activity_regularizer=tf.keras.regularizers.l2(valreg),
-    kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
+        self.l3 = Dense(30, kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
     bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val))
 
-        self.l4 = Dense(1, kernel_regularizer=tf.keras.regularizers.l1(valreg),
-    activity_regularizer=tf.keras.regularizers.l2(valreg),
-    kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
+        self.l4 = Dense(1, kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
     bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val))
 
 
@@ -58,11 +51,11 @@ class Critic(tf.keras.Model):
         return
 
     def call(self, inputs):
-        feat = self.mask(inputs)
+        feat = tf.squeeze(self.mask(tf.expand_dims(inputs, axis=-1)), axis=-1)
         feat= self.lstm(feat)
-        feat = tf.nn.dropout(feat, rate=0.01)
+        #feat = tf.nn.dropout(feat, rate=self.dropout_rate)
         feat = tf.nn.relu(self.l1(feat))
-        feat = tf.nn.dropout(feat, rate=0.01)
+        #feat = tf.nn.dropout(feat, rate=self.dropout_rate)
         feat = tf.nn.relu(self.l2(feat))
         feat = tf.nn.relu(self.l3(feat))
         feat = tf.nn.sigmoid(self.l4(feat))
@@ -161,47 +154,29 @@ class Critic(tf.keras.Model):
 
 ##### ACTOR CLASSS ####
 class Actor(tf.keras.Model):
-    def __init__(self, nature, valreg=0.01, seed_val=0.01, pad_value = -7.,
-                 dolinar_layers=2,tau=0.01):
+    def __init__(self, nature, seed_val=0.01, pad_value = -7.,
+                 dolinar_layers=2,tau=0.01,dropout_rate=0.0):
         super(Actor,self).__init__()
         self.dolinar_layers = dolinar_layers
         self.pad_value = pad_value
         self.nature = nature
         self.tau = tau
 
-        self.output_lstm = 500
-        self.lstm = tf.keras.layers.LSTM(self.output_lstm, return_sequences=True, stateful=True, batch_size=None, input_shape=(None,None,1))
-        self.mask = tf.keras.layers.Masking(mask_value=pad_value, input_shape=(None,1))
-
-        if nature == "primary":
-            self.dropout_rate = 0.1
-        elif nature == "target":
-            self.dropout_rate = 0.
-        else:
-            print("Hey! the character is either primary or target")
-
-        #     self.lstm = tf.keras.layers.LSTM(500, return_sequences=True, stateful=True)
-        #     # self.mask = tf.keras.layers.Masking(mask_value=pad_value, input_shape=(self.dolinar_layers, 1))
+        self.output_lstm = 250
+        self.lstm = tf.keras.layers.LSTM(self.output_lstm, return_sequences=True, stateful=True,input_shape=(2,1))
+        self.mask = tf.keras.layers.Masking(mask_value=pad_value, input_shape=(2,1))
 
 
-        self.l1 = Dense(300,kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
-        bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
-        kernel_regularizer=tf.keras.regularizers.l1(valreg),
-        activity_regularizer=tf.keras.regularizers.l2(valreg), dtype='float32')
+        self.l1 = Dense(30,kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
+        bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val), dtype='float32')
 
-        self.l2 = Dense(100, kernel_regularizer=tf.keras.regularizers.l1(valreg),
-    activity_regularizer=tf.keras.regularizers.l2(valreg),
-    kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
+        self.l2 = Dense(10, kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
     bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val), dtype='float32')
 
-        self.l3 = Dense(10, kernel_regularizer=tf.keras.regularizers.l1(valreg),
-    activity_regularizer=tf.keras.regularizers.l2(valreg),
-    kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
+        self.l3 = Dense(10, kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
     bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val), dtype='float32')
 
-        self.l4 = Dense(1, kernel_regularizer=tf.keras.regularizers.l1(valreg),
-    activity_regularizer=tf.keras.regularizers.l2(valreg),
-    kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
+        self.l4 = Dense(1,kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
     bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val), dtype='float32')
 
 
@@ -221,15 +196,15 @@ class Actor(tf.keras.Model):
         return
 
     def call(self, inputs):
-        feat = self.mask(inputs)
+        feat = tf.squeeze(self.mask(tf.expand_dims(inputs, axis=-1)), axis=-1)
         feat= self.lstm(inputs)
-        feat = tf.nn.dropout(feat, rate=self.dropout_rate)
+        #feat = tf.nn.dropout(feat, rate=self.dropout_rate)
         feat = tf.nn.relu(self.l1(feat))
-        feat = tf.nn.dropout(feat, rate=self.dropout_rate)
+        # feat = tf.nn.dropout(feat, rate=self.dropout_rate)
         feat = tf.nn.relu(self.l2(feat))
-        feat = tf.nn.relu(self.l3(feat))
+        # feat = tf.nn.sigmoid(self.l3(feat))
         feat = tf.nn.tanh(self.l4(feat))
-        feat = tf.clip_by_value(feat, 0.0, 1.0)
+        # feat = tf.clip_by_value(feat, 0.0, 1.0)
         return feat
 
     # def process_sequence_of_experiences(self, experiences):

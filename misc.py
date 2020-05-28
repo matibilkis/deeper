@@ -6,6 +6,37 @@ from math import erf
 import pickle
 import tensorflow as tf
 
+############################ ONLY FOR FIRST LAYER #############
+############################ ONLY FOR FIRST LAYER #############
+############################ ONLY FOR FIRST LAYER #############
+############################ ONLY FOR FIRST LAYER #############
+def Prob(alpha, beta, n):
+    p0 = np.exp(-(alpha-beta)**2)
+    if n == 0:
+        return p0
+    else:
+        return 1-p0
+
+### this is just p(R=1 | g, n; beta) = p((-1^{g} alpha | n)) = p(n|allpha) pr(alpha)(p(n))
+def qval(beta, n, guess):
+    #dolinar guessing rule (= max-likelihood for L=1, careful sign of \beta)
+    alpha = 0.4
+    pn = np.sum([Prob(g*alpha, beta, n) for g in [-1,1]])
+    return Prob(guess*alpha, beta, n)/pn
+
+def ps_maxlik(beta):
+    #dolinar guessing rule (= max-likelihood for L=1, careful sign of \beta)
+    alpha = 0.4
+    p=0
+    for n1 in [0,1]:
+       p+=Prob(np.sign(beta)*(-1)**(n1)*alpha, beta, n1)
+    return p/2
+############################ ONLY FOR FIRST LAYER #############
+############################ ONLY FOR FIRST LAYER #############
+############################ ONLY FOR FIRST LAYER #############
+############################ ONLY FOR FIRST LAYER #############
+
+
 def P(a,b,et,n):
 
     p0=np.exp(-abs((et*a)+b)**2)
@@ -366,8 +397,8 @@ def actor_grad_tf(actor, dq_da, experiences, optimizer_actor):
             finns.append(actor(tf.reshape(unstacked_exp[index], (experiences.shape[0], 1,1))))
         final_preds = tf.concat(finns, axis=1)
         final_preds = actor(final_preds)
-        da_dtheta=tape.gradient(final_preds, actor.trainable_variables, output_gradients=-dq_da)
-        #tf.print("dq_dtheta mean", [tf.math.reduce_mean(k).numpy() for k in da_dtheta])
+        da_dtheta=tape.gradient(final_preds, actor.trainable_variables, output_gradients=-dq_da/experiences.shape[0]) #- because you wanna minimize, and the Q value maximizes..
+        #/experiences.shape[0] because it's 1/N (this is checked in debugging actor notebook... proof of [...])
         optimizer_actor.apply_gradients(zip(da_dtheta, actor.trainable_variables))
     return
 
@@ -377,10 +408,6 @@ def optimization_step(experiences, critic, critic_target, actor, actor_target, o
     # experiences = experiences.astype(np.float32)
     targeted_experience = actor_target.process_sequence_of_experiences_tf(experiences)
     sequences, zeroed_rews = critic_target.process_sequence_tf(targeted_experience)
-    print(critic.mask(sequences)._keras_mask)
-    print("******")
-    while True:
-        c=1
     labels_critic = critic_target.give_td_errors_tf( sequences, zeroed_rews)
 
     loss_critic = step_critic_tf(sequences ,labels_critic, critic, optimizer_critic)
