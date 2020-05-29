@@ -11,11 +11,12 @@ from datetime import datetime
 import random
 import matplotlib
 from environment import Environment
-from plots import just_plot
-from misc import *
-from nets import *
+from plots import just_plot, profiles_kennedy
+import misc
+import nets
 from buffer import ReplayBuffer
 from datetime import datetime
+
 
 
 
@@ -28,15 +29,15 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
     env = Environment(amplitude=amplitude, dolinar_layers = dolinar_layers, number_phases=number_phases)
     buffer = ReplayBuffer(buffer_size=buffer_size)
 
-    critic = Critic(nature="primary", dolinar_layers = dolinar_layers, number_phases=number_phases)
-    critic_target = Critic(nature="target", dolinar_layers = dolinar_layers, number_phases=number_phases)
-    actor = Actor(nature="primary", dolinar_layers = dolinar_layers)
-    actor_target = Actor(nature="target", dolinar_layers = dolinar_layers)
+    critic = nets.Critic(nature="primary", dolinar_layers = dolinar_layers, number_phases=number_phases)
+    critic_target = nets.Critic(nature="target", dolinar_layers = dolinar_layers, number_phases=number_phases)
+    actor = nets.Actor(nature="primary", dolinar_layers = dolinar_layers)
+    actor_target = nets.Actor(nature="target", dolinar_layers = dolinar_layers)
 
     optimizer_critic = tf.keras.optimizers.Adam(lr=lr_critic)
     optimizer_actor = tf.keras.optimizers.Adam(lr=lr_actor)
 
-    policy_evaluator = PolicyEvaluator(amplitude = amplitude, dolinar_layers=dolinar_layers, number_phases = number_phases)
+    policy_evaluator = misc.PolicyEvaluator(amplitude = amplitude, dolinar_layers=dolinar_layers, number_phases = number_phases)
 
     rt = []
     pt = []
@@ -45,7 +46,7 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
     ##### STORING FOLDER ####
     ##### STORING FOLDER ####
     ##### STORING FOLDER ####
-    numb = record()
+    numb = misc.record()
     directory ="results/run_" + str(numb)
 
 
@@ -109,7 +110,7 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
             actor.lstm.stateful=False
             actor.reset_states_workaround(new_batch_size=int(batch_size))
 
-            new_loss = optimization_step(sampled_experiences, critic, critic_target, actor, actor_target, optimizer_critic, optimizer_actor)
+            new_loss = misc.optimization_step(sampled_experiences, critic, critic_target, actor, actor_target, optimizer_critic, optimizer_actor)
             new_loss = new_loss.numpy()
             actor.reset_states_workaround(new_batch_size=1)
             actor.lstm.stateful=True
@@ -117,6 +118,22 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
             critic_target.update_target_parameters(critic)
             actor_target.update_target_parameters(actor)
             noise_displacement = max(0.2,0.99*noise_displacement)
+            if episode%(int((total_episodes-batch_size)/10)) == 1:
+                var_exists = 'history_predictions' in locals() or 'history_predictions' in globals()
+                if not var_exists:
+                    history_predictions={"final_episode_info":total_episodes}
+
+                history_predictions[str(episode)] = {"[]":[], "00":[],"01":[],"11":[],"10":[]}
+                bbbs = np.arange(.1,1.1,.05)
+                inps = np.stack([np.ones(len(bbbs))*critic.pad_value, bbbs], axis=1)
+                inps = np.reshape(inps, (len(bbbs),1,2))
+                history_predictions[str(episode)]["[]"] = np.squeeze(critic(inps))
+                for outcome in [0.,1.]:
+                   for guess_index in [0.,1.]:
+                        m=[]
+                        for k in tf.unstack(inps):
+                            m.append(tf.concat([k, np.reshape(np.array([outcome,guess_index]), (1,2))], axis=0))
+                        history_predictions[str(episode)][str(outcome)+str(guess_index)] = np.squeeze(critic(tf.stack(m, axis=0)))[:,1]
         ###### OPTIMIZATION STEP ######
         ###### OPTIMIZATION STEP ######
 
@@ -137,6 +154,8 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
     for model, net_folder in zip([actor, actor_target, critic, critic_target],["actor_primary", "actor_target", "critic_primary", "critic_target"]):
         model.save_weights(directory+"/networks/"+net_folder+"/")
     just_plot(rrt, pt, avg_train, env.helstrom(), policy_evaluator, directory)
+    if dolinar_layers  ==1:
+        profiles_kennedy(critic, directory, history_predictions)
     # BigPlot(buffer,rt, pt, history_betas, history_betas_would_have_done, histo_preds, losses, directory)
     return
 
@@ -156,9 +175,9 @@ if __name__ == "__main__":
     #no_delete_variables =
     #["no_delete_variables","amplitude", "to_csv","tau", "lr_critic", "lr_actor", "noise_displacement", "ep_guess", "dolinar_layers", "number_phases", "buffer_size", "batch_size"]
 
-    for batch_size in [32.]:
+    for batch_size in [4., 4.]:
         begin = datetime.now()
-        name_run = RDPG(amplitude=amplitude, total_episodes=10**3, dolinar_layers=dolinar_layers, noise_displacement=noise_displacement, tau=tau,
+        name_run = RDPG(amplitude=amplitude, total_episodes=50, dolinar_layers=dolinar_layers, noise_displacement=noise_displacement, tau=tau,
     buffer_size=buffer_size, batch_size=batch_size, lr_critic=lr_critic, lr_actor=lr_actor, ep_guess=ep_guess)
 
         info_run +="***\n***\nname_run: {} ***\ntau: {}\nlr_critic: {}\nnoise_displacement: {}\nbatch_size: {}\n-------\n-------\n\n".format(name_run,tau, lr_critic, noise_displacement, batch_size)
@@ -172,11 +191,12 @@ if __name__ == "__main__":
             f.write(info_run)
             f.close()
 
-        for name in dir():
-            if (name.startswith('_'))|(name in ["RDPG", "no_delete_variables","amplitude", "to_csv","tau", "lr_critic", "lr_actor", "noise_displacement", "ep_guess", "dolinar_layers", "number_phases", "buffer_size", "batch_size","to_csv"]):
-                pass
-            else:
-                del globals()[name]
+        tf.keras.backend.clear_session()
+        # for name in dir():
+        #     if (name.startswith('_'))|(name in ["RDPG", "no_delete_variables","amplitude", "to_csv","tau", "lr_critic", "lr_actor", "noise_displacement", "ep_guess", "dolinar_layers", "number_phases", "buffer_size", "batch_size","to_csv","os", "datetime","begin","Environment", "just_plot", "profiles_kennedy", "ReplayBuffer", "datetime","nets","misc","tf"]):
+        #        pass
+        #     else:
+        #        del globals()[name]
 
 
 

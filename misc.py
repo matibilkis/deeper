@@ -31,6 +31,8 @@ def ps_maxlik(beta):
     for n1 in [0,1]:
        p+=Prob(np.sign(beta)*(-1)**(n1)*alpha, beta, n1)
     return p/2
+
+
 ############################ ONLY FOR FIRST LAYER #############
 ############################ ONLY FOR FIRST LAYER #############
 ############################ ONLY FOR FIRST LAYER #############
