@@ -345,78 +345,78 @@ def croots(n):
         return None
     return (Complex(cmath.rect(1, 2 * k * cmath.pi / n)) for k in range(n))
 
-
-
-@tf.function
-def step_critic_tf(batched_input,labels_critic, critic, optimizer_critic):
-    with tf.GradientTape() as tape:
-        tape.watch(critic.trainable_variables)
-        preds_critic = critic(batched_input)
-        loss_critic = tf.keras.losses.MSE(tf.expand_dims(labels_critic, axis=2), preds_critic)
-        loss_critic = tf.reduce_mean(loss_critic)
-        grads = tape.gradient(loss_critic, critic.trainable_variables)
-        #tf.print(" dL_dQ", [tf.math.reduce_mean(k).numpy() for k in grads])
-
-        optimizer_critic.apply_gradients(zip(grads, critic.trainable_variables))
-        return tf.squeeze(loss_critic)
-
-@tf.function
-def critic_grad_tf(critic, experiences):
-    with tf.GradientTape() as tape:
-        unstacked_exp = tf.unstack(tf.convert_to_tensor(experiences), axis=1)
-        to_stack = []
-        actions_wathed_index = []
-        for index in range(0,experiences.shape[-1]-3,2): # I consider from first outcome to last one (but guess)
-            actions_wathed_index.append(index)
-            to_stack.append(tf.reshape(unstacked_exp[index],(experiences.shape[0],1,1)))
-
-        actions_indexed = tf.concat(to_stack,axis=1)
-        tape.watch(actions_indexed)
-
-        index_actions=0
-        watched_exps=[tf.ones((experiences.shape[0],1,1))*critic.pad_value]
-        watched_actions_unstacked = tf.unstack(actions_indexed, axis=1)
-        for index in range(0,experiences.shape[-1]-1):
-            if index in actions_wathed_index:
-                watched_exps.append(tf.expand_dims(watched_actions_unstacked[index_actions], axis=2))
-                index_actions+=1
-            else:
-                watched_exps.append(tf.reshape(unstacked_exp[index],(experiences.shape[0],1,1)))
-
-        qvals = critic(tf.reshape(tf.concat(watched_exps, axis=2), (experiences.shape[0],critic.dolinar_layers+1,2)))
-
-        dq_da = tape.gradient(qvals, actions_indexed)
-        #tf.print("dq_da mean", tf.math.reduce_mean(dq_da))
-        return dq_da
-
-@tf.function
-def actor_grad_tf(actor, dq_da, experiences, optimizer_actor):
-    with tf.GradientTape() as tape:
-        tape.watch(actor.trainable_variables)
-        finns = [actor(tf.ones((experiences.shape[0], 1,1))*actor.pad_value)]
-        unstacked_exp = tf.unstack(experiences, axis=1)
-        for index in range(1,2*actor.dolinar_layers-2,2):
-            finns.append(actor(tf.reshape(unstacked_exp[index], (experiences.shape[0], 1,1))))
-        final_preds = tf.concat(finns, axis=1)
-        final_preds = actor(final_preds)
-        da_dtheta=tape.gradient(final_preds, actor.trainable_variables, output_gradients=-dq_da/experiences.shape[0]) #- because you wanna minimize, and the Q value maximizes..
-        #/experiences.shape[0] because it's 1/N (this is checked in debugging actor notebook... proof of [...])
-        optimizer_actor.apply_gradients(zip(da_dtheta, actor.trainable_variables))
-    return
-
-# @tf.function
 def optimization_step(experiences, critic, critic_target, actor, actor_target, optimizer_critic, optimizer_actor):
     # actor.lstm.reset_states()
     # experiences = experiences.astype(np.float32)
     targeted_experience = actor_target.process_sequence_of_experiences_tf(experiences)
-    sequences, zeroed_rews = critic_target.process_sequence_tf(targeted_experience)
-    labels_critic = critic_target.give_td_errors_tf( sequences, zeroed_rews)
+    batched_input, zeroed_rews = critic_target.process_sequence_tf(targeted_experience)
+    labels_critic = critic_target.give_td_errors_tf( batched_input, zeroed_rews)
 
-    loss_critic = step_critic_tf(sequences ,labels_critic, critic, optimizer_critic)
+    loss_critic = critic.step_critic_tf(batched_input ,labels_critic, optimizer_critic)
 
-    dq_da = critic_grad_tf(critic, experiences)
-    actor_grad_tf(actor, dq_da, experiences, optimizer_actor)
+    dq_da = critic.critic_grad_tf(experiences)
+    actor.actor_grad_tf(dq_da, experiences, optimizer_actor)
     return loss_critic
+
+# @tf.function
+# def step_critic_tf(batched_input,labels_critic, critic, optimizer_critic):
+#     with tf.GradientTape() as tape:
+#         tape.watch(critic.trainable_variables)
+#         preds_critic = critic(batched_input)
+#         loss_critic = tf.keras.losses.MSE(tf.expand_dims(labels_critic, axis=2), preds_critic)
+#         loss_critic = tf.reduce_mean(loss_critic)
+#         grads = tape.gradient(loss_critic, critic.trainable_variables)
+#         #tf.print(" dL_dQ", [tf.math.reduce_mean(k).numpy() for k in grads])
+#
+#         optimizer_critic.apply_gradients(zip(grads, critic.trainable_variables))
+#         return tf.squeeze(loss_critic)
+#
+# @tf.function
+# def critic_grad_tf(critic, experiences):
+#     with tf.GradientTape() as tape:
+#         unstacked_exp = tf.unstack(tf.convert_to_tensor(experiences), axis=1)
+#         to_stack = []
+#         actions_wathed_index = []
+#         for index in range(0,experiences.shape[-1]-3,2): # I consider from first outcome to last one (but guess)
+#             actions_wathed_index.append(index)
+#             to_stack.append(tf.reshape(unstacked_exp[index],(experiences.shape[0],1,1)))
+#
+#         actions_indexed = tf.concat(to_stack,axis=1)
+#         tape.watch(actions_indexed)
+#
+#         index_actions=0
+#         watched_exps=[tf.ones((experiences.shape[0],1,1))*critic.pad_value]
+#         watched_actions_unstacked = tf.unstack(actions_indexed, axis=1)
+#         for index in range(0,experiences.shape[-1]-1):
+#             if index in actions_wathed_index:
+#                 watched_exps.append(tf.expand_dims(watched_actions_unstacked[index_actions], axis=2))
+#                 index_actions+=1
+#             else:
+#                 watched_exps.append(tf.reshape(unstacked_exp[index],(experiences.shape[0],1,1)))
+#
+#         qvals = critic(tf.reshape(tf.concat(watched_exps, axis=2), (experiences.shape[0],critic.dolinar_layers+1,2)))
+#
+#         dq_da = tape.gradient(qvals, actions_indexed)
+#         #tf.print("dq_da mean", tf.math.reduce_mean(dq_da))
+#         return dq_da
+#
+# @tf.function
+# def actor_grad_tf(actor, dq_da, experiences, optimizer_actor):
+#     with tf.GradientTape() as tape:
+#         tape.watch(actor.trainable_variables)
+#         finns = [actor(tf.ones((experiences.shape[0], 1,1))*actor.pad_value)]
+#         unstacked_exp = tf.unstack(experiences, axis=1)
+#         for index in range(1,2*actor.dolinar_layers-2,2):
+#             finns.append(actor(tf.reshape(unstacked_exp[index], (experiences.shape[0], 1,1))))
+#         final_preds = tf.concat(finns, axis=1)
+#         final_preds = actor(final_preds)
+#         da_dtheta=tape.gradient(final_preds, actor.trainable_variables, output_gradients=-dq_da/experiences.shape[0]) #- because you wanna minimize, and the Q value maximizes..
+#         #/experiences.shape[0] because it's 1/N (this is checked in debugging actor notebook... proof of [...])
+#         optimizer_actor.apply_gradients(zip(da_dtheta, actor.trainable_variables))
+#     return
+
+# @tf.function
+
 
 
 

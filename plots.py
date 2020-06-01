@@ -80,8 +80,8 @@ def just_plot(rt, pt, avg_train, helstrom, policy_evaluator, directory):
     optimal_beta= -0.7499999999999993
 
     ax1.plot(np.log10(np.arange(1,T+1)),rt, color="red", linewidth=15, alpha=0.8, label=r'$R_t$')
-    ax1.plot(np.log10(np.arange(1,T+1)),helstrom*np.ones(T), color="black",  linewidth=15,alpha=0.5, label="Helstrom Bound")
-    ax1.plot(np.log10(np.arange(1,T+1)),helstrom*np.ones(T), color="black",  linewidth=15,alpha=0.5, label="Optimal 1L" +r'$\alpha = 0.4$')
+    ax1.plot(np.log10(np.arange(1,T+1)),optimal*np.ones(T), color="black",  linewidth=15,alpha=0.5, label="Helstrom Bound")
+    ax1.plot(np.log10(np.arange(1,T+1)),optimal*np.ones(T), color="black",  linewidth=15,alpha=0.5, label="Optimal 1L" +r'$\alpha = 0.4$')
     ax1.plot(np.log10(np.arange(1,T+1)),pt, color="blue", linewidth=15, alpha=0.8, label=r'$P_t$')
 
     outcomes_so_far=[]
@@ -90,11 +90,11 @@ def just_plot(rt, pt, avg_train, helstrom, policy_evaluator, directory):
     betas_done = policy_evaluator.recorded_trajectory_tree[str(layer)][str(np.array(outcomes_so_far))]
 
 
-    ax2.plot(np.arange(1,len(betas_would_do)+1), betas_would_do, color="blue", linewidth=15, alpha=0.5, label="First beta would do")
-    ax2.plot(np.arange(1,len(betas_would_do)+1), betas_done, '-', color="red", linewidth=10, alpha=0.8, label="First beta have done")
+    ax2.plot(np.log10(np.arange(1,len(betas_would_do)+1)), betas_would_do, color="blue", linewidth=15, alpha=0.5, label="First beta would do")
+    ax2.plot(np.log10(np.arange(1,len(betas_would_do)+1)), betas_done, '-', color="red", linewidth=10, alpha=0.8, label="First beta have done")
 
-    ax2.plot(np.arange(1, len(betas_would_do)+1),np.ones(len(betas_would_do))*optimal_beta, color="black", linewidth=15, alpha=0.8, label="optimal-beta")
-    ax2.plot(np.arange(1, len(betas_would_do)+1),-np.ones(len(betas_would_do))*optimal_beta, color="black", linewidth=15, alpha=0.8)#, label="optimal-beta")
+    ax2.plot(np.log10(np.arange(1, len(betas_would_do)+1)),np.ones(len(betas_would_do))*optimal_beta, color="black", linewidth=15, alpha=0.8, label="optimal-beta")
+    ax2.plot(np.log10(np.arange(1, len(betas_would_do)+1)),-np.ones(len(betas_would_do))*optimal_beta, color="black", linewidth=15, alpha=0.8)#, label="optimal-beta")
 
 
     ax3.plot(np.arange(1,len(avg_train)+1),avg_train, color="black", linewidth=15, alpha=0.8, label="Critic's loss")

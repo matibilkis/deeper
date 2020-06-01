@@ -16,9 +16,7 @@ import misc
 import nets
 from buffer import ReplayBuffer
 from datetime import datetime
-
-
-
+tf.config.experimental_run_functions_eagerly(True)
 
 def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, total_episodes = 10**3, buffer_size=500, batch_size=64, ep_guess=0.01,
  noise_displacement=0.5, lr_actor=0.01, lr_critic=0.001, tau=0.005):
@@ -118,6 +116,7 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
             critic_target.update_target_parameters(critic)
             actor_target.update_target_parameters(actor)
             noise_displacement = max(0.2,0.99*noise_displacement)
+
             if episode%(int((total_episodes-batch_size)/10)) == 1:
                 var_exists = 'history_predictions' in locals() or 'history_predictions' in globals()
                 if not var_exists:
@@ -160,44 +159,45 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
     return
 
 
-if __name__ == "__main__":
-    info_run = ""
-    to_csv=[]
-    amplitude=0.4
-    tau = 0.01
-    lr_critic = 0.01
-    lr_actor = 0.01
-    noise_displacement = .25
-    ep_guess=0.01
-    dolinar_layers=1
-    number_phases=2
-    buffer_size = 10**8
-    #no_delete_variables =
-    #["no_delete_variables","amplitude", "to_csv","tau", "lr_critic", "lr_actor", "noise_displacement", "ep_guess", "dolinar_layers", "number_phases", "buffer_size", "batch_size"]
+info_run = ""
+to_csv=[]
+amplitude=0.4
+tau = 0.01
+lr_critic = 0.01
+lr_actor = 0.01
+noise_displacement = 1
+ep_guess=1
+dolinar_layers=1
+number_phases=2
+buffer_size = 10**2
+#no_delete_variables =
+#["no_delete_variables","amplitude", "to_csv","tau", "lr_critic", "lr_actor", "noise_displacement", "ep_guess", "dolinar_layers", "number_phases", "buffer_size", "batch_size"]
 
-    for batch_size in [4., 4.]:
-        begin = datetime.now()
-        name_run = RDPG(amplitude=amplitude, total_episodes=50, dolinar_layers=dolinar_layers, noise_displacement=noise_displacement, tau=tau,
-    buffer_size=buffer_size, batch_size=batch_size, lr_critic=lr_critic, lr_actor=lr_actor, ep_guess=ep_guess)
+for batch_size in [32, 64, 128.]:
+    for tau in [0.01]:
+        for lr_actor in [0.001]:
 
-        info_run +="***\n***\nname_run: {} ***\ntau: {}\nlr_critic: {}\nnoise_displacement: {}\nbatch_size: {}\n-------\n-------\n\n".format(name_run,tau, lr_critic, noise_displacement, batch_size)
+            begin = datetime.now()
 
-        info_run += "\n\n TOTAL_TIME: {}".format(str(begin-datetime.now()))
+            name_run = RDPG(amplitude=amplitude, total_episodes=2*10**3, dolinar_layers=dolinar_layers, noise_displacement=noise_displacement, tau=tau,
+        buffer_size=buffer_size, batch_size=batch_size, lr_critic=lr_critic, lr_actor=lr_actor, ep_guess=ep_guess)
 
-        to_csv.append({"name_run":"run_"+str(name_run), "tau": tau, "lr_critic":lr_critic, "noise_displacement": noise_displacement,
-        "BS":batch_size})
+            info_run +="***\n***\nname_run: {} ***\ntau: {}\nlr_critic: {}\nnoise_displacement: {}\nbatch_size: {}\n-------\n-------\n\n".format(name_run,tau, lr_critic, noise_displacement, batch_size)
 
-        with open("results/info_runs.txt", 'a+') as f:
-            f.write(info_run)
-            f.close()
+            info_run += "\n\n TOTAL_TIME: {}".format(str(begin-datetime.now()))
+            #
+            # to_csv.append({"name_run":"run_"+str(name_run), "tau": tau, "lr_critic":lr_critic, "noise_displacement": noise_displacement,
+            # "BS":batch_size})
 
-        tf.keras.backend.clear_session()
-        # for name in dir():
-        #     if (name.startswith('_'))|(name in ["RDPG", "no_delete_variables","amplitude", "to_csv","tau", "lr_critic", "lr_actor", "noise_displacement", "ep_guess", "dolinar_layers", "number_phases", "buffer_size", "batch_size","to_csv","os", "datetime","begin","Environment", "just_plot", "profiles_kennedy", "ReplayBuffer", "datetime","nets","misc","tf"]):
-        #        pass
-        #     else:
-        #        del globals()[name]
+            with open("results/info_runs.txt", 'a+') as f:
+                f.write(info_run)
+                f.close()
 
+    # for name in dir():
+    #     if (name.startswith('_'))|(name in ["RDPG", "no_delete_variables","amplitude", "to_csv","tau", "lr_critic", "lr_actor", "noise_displacement", "ep_guess", "dolinar_layers", "number_phases", "buffer_size", "batch_size","to_csv"]):
+    #        pass
+    #     else:
+    #        del globals()[name]
 
 
     ##### if we put more runs... ###
@@ -208,3 +208,11 @@ if __name__ == "__main__":
 ##################time 10**4  without tf.function ################
 ###with tf.function 22 min 10**4, batch_size =8
 #### without batch 16- 1.10 hours, 32. takes ~2 hourse, 64 ~ 3hourse, 128>5 hourse
+
+
+# ##
+#         for name in dir():
+#             if (name.startswith('_'))|(name in ["RDPG", "no_delete_variables","amplitude", "to_csv","tau", "lr_critic", "lr_actor", "noise_displacement", "ep_guess", "dolinar_layers", "number_phases", "buffer_size", "batch_size","to_csv","os", "datetime","begin","Environment", "just_plot", "profiles_kennedy", "ReplayBuffer", "datetime","nets","misc","np", "plt", "os", "tqdm", "deque", "random", "matplotlib"]):
+#                pass
+#             else:
+#                del globals()[name]

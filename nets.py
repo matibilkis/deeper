@@ -24,13 +24,13 @@ class Critic(tf.keras.Model):
         self.lstm = tf.keras.layers.LSTM(50, return_sequences=True, input_shape=(None,2)) #input_shape = (time_steps, features)
 
         self.tau = tau
-        self.l1 = Dense(50,kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
+        self.l1 = Dense(250,kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
         bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val))
 
-        self.l2 = Dense(30, kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
+        self.l2 = Dense(300, kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
     bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val))
 
-        self.l3 = Dense(30, kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
+        self.l3 = Dense(300, kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
     bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val))
 
         self.l4 = Dense(1, kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
@@ -54,10 +54,10 @@ class Critic(tf.keras.Model):
         feat = tf.squeeze(self.mask(tf.expand_dims(inputs, axis=-1)), axis=-1)
         feat= self.lstm(feat)
         #feat = tf.nn.dropout(feat, rate=self.dropout_rate)
-        feat = tf.nn.relu(self.l1(feat))
+        feat = self.l1(feat)
         #feat = tf.nn.dropout(feat, rate=self.dropout_rate)
-        feat = tf.nn.relu(self.l2(feat))
-        feat = tf.nn.relu(self.l3(feat))
+        # feat = tf.nn.tanh(self.l2(feat))
+        feat = tf.nn.sigmoid(self.l3(feat))
         feat = tf.nn.sigmoid(self.l4(feat))
         return feat
 
@@ -152,6 +152,77 @@ class Critic(tf.keras.Model):
         guess_index = np.squeeze(tf.argmax(predsq, axis=0))
         return guess_index
 
+
+
+    @tf.function
+    def step_critic_tf(self, batched_input,labels_critic, optimizer_critic):
+     with tf.GradientTape() as tape:
+         tape.watch(self.trainable_variables)
+         preds_critic = self(batched_input)
+         loss_critic = tf.keras.losses.MSE(tf.expand_dims(labels_critic, axis=2), preds_critic)
+         loss_critic = tf.reduce_mean(loss_critic)
+         grads = tape.gradient(loss_critic, self.trainable_variables)
+         #tf.print(" dL_dQ", [tf.math.reduce_mean(k).numpy() for k in grads])
+
+         optimizer_critic.apply_gradients(zip(grads, self.trainable_variables))
+         return tf.squeeze(loss_critic)
+
+
+    # @tf.function
+    # def critic_grad_tf(self, experiences):
+    #     with tf.GradientTape() as tape:
+    #         unstacked_exp = tf.unstack(tf.convert_to_tensor(experiences), axis=1)
+    #         to_stack = []
+    #         actions_wathed_index = []
+    #         for index in range(0,experiences.shape[-1]-3,2): # I consider from first outcome to last one (but guess)
+    #             actions_wathed_index.append(index)
+    #             to_stack.append(tf.reshape(unstacked_exp[index],(experiences.shape[0],1,1)))
+    #
+    #         actions_indexed = tf.concat(to_stack,axis=1)
+    #         tape.watch(actions_indexed)
+    #
+    #         index_actions=0
+    #         watched_exps=[tf.ones((experiences.shape[0],1,1))*self.pad_value]
+    #         watched_actions_unstacked = tf.unstack(actions_indexed, axis=1)
+    #         for index in range(0,experiences.shape[-1]-1):
+    #             if index in actions_wathed_index:
+    #                 watched_exps.append(tf.expand_dims(watched_actions_unstacked[index_actions], axis=2))
+    #                 index_actions+=1
+    #             else:
+    #                 watched_exps.append(tf.reshape(unstacked_exp[index],(experiences.shape[0],1,1)))
+    #
+    #         qvals = self(tf.reshape(tf.concat(watched_exps, axis=2), (experiences.shape[0],self.dolinar_layers+1,2)))
+    #
+    #         dq_da = tape.gradient(qvals, actions_indexed)
+    #         return dq_da
+    def critic_grad_tf(self, experiences):
+        unstacked_exp = tf.unstack(tf.convert_to_tensor(experiences), axis=1)
+        to_stack = []
+        actions_wathed_index = []
+        for index in range(0,experiences.shape[-1]-3,2): # I consider from first outcome to last one (but guess)
+            actions_wathed_index.append(index)
+            to_stack.append(tf.reshape(unstacked_exp[index],(experiences.shape[0],1,1)))
+
+        actions_indexed = tf.concat(to_stack,axis=1)
+
+        with tf.GradientTape(persistent = True) as tape:
+            tape.watch(actions_indexed)
+
+            index_actions=0
+            watched_exps=[tf.ones((experiences.shape[0],1,1))*self.pad_value]
+            watched_actions_unstacked = tf.unstack(actions_indexed, axis=1)
+            for index in range(0,experiences.shape[-1]-1):
+                if index in actions_wathed_index:
+                    watched_exps.append(tf.expand_dims(watched_actions_unstacked[index_actions], axis=2))
+                    index_actions+=1
+                else:
+                    watched_exps.append(tf.reshape(unstacked_exp[index],(experiences.shape[0],1,1)))
+
+            qvals = self(tf.reshape(tf.concat(watched_exps, axis=2), (experiences.shape[0],self.dolinar_layers+1,2)))
+            qvalsunstckd = tf.unstack(qvals, axis=1)
+            return [tape.gradient(q, actions_indexed) for q in qvalsunstckd]
+
+
 ##### ACTOR CLASSS ####
 class Actor(tf.keras.Model):
     def __init__(self, nature, seed_val=0.01, pad_value = -7.,
@@ -163,8 +234,8 @@ class Actor(tf.keras.Model):
         self.tau = tau
 
         self.output_lstm = 250
-        self.lstm = tf.keras.layers.LSTM(self.output_lstm, return_sequences=True, stateful=True,input_shape=(2,1))
-        self.mask = tf.keras.layers.Masking(mask_value=pad_value, input_shape=(2,1))
+        self.lstm = tf.keras.layers.LSTM(self.output_lstm, return_sequences=True, stateful=True, input_shape=(1,1))
+        self.mask = tf.keras.layers.Masking(mask_value=pad_value, input_shape=(1,1))
 
 
         self.l1 = Dense(30,kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
@@ -199,11 +270,11 @@ class Actor(tf.keras.Model):
         feat = tf.squeeze(self.mask(tf.expand_dims(inputs, axis=-1)), axis=-1)
         feat= self.lstm(inputs)
         #feat = tf.nn.dropout(feat, rate=self.dropout_rate)
-        feat = tf.nn.relu(self.l1(feat))
+        feat = tf.nn.sigmoid(self.l1(feat))
         # feat = tf.nn.dropout(feat, rate=self.dropout_rate)
-        feat = tf.nn.relu(self.l2(feat))
+        feat = tf.nn.sigmoid(self.l2(feat))
         # feat = tf.nn.sigmoid(self.l3(feat))
-        feat = tf.nn.tanh(self.l4(feat))
+        feat = tf.nn.sigmoid(self.l4(feat))
         # feat = tf.clip_by_value(feat, 0.0, 1.0)
         return feat
 
@@ -216,13 +287,16 @@ class Actor(tf.keras.Model):
     #     return export
 
     @tf.function
-    def process_sequence_of_experiences_tf(self, experiences):
-
+    def process_sequence_of_experiences_tf(self, experiences, who):
+        #### this is trivial for dolianr_layers = 1 #####
         unstacked_exp = tf.unstack(tf.convert_to_tensor(experiences), axis=1)
         to_stack = []
         for index in range(2*self.dolinar_layers-1): # I consider from first outcome to last one (but guess)
             if (index==0):
-                to_stack.append(unstacked_exp[index])
+                if who == "target":
+                    to_stack.append(unstacked_exp[index])
+                else:
+                    to_stack.append(tf.squeeze(self(tf.ones((experiences.shape[0], 1, 1))*self.pad_value)))
             if (index%2 == 1):
                 to_stack.append(unstacked_exp[index])
                 to_stack.append(tf.squeeze(self(tf.reshape(unstacked_exp[index],(experiences.shape[0],1,1)))))
@@ -232,9 +306,24 @@ class Actor(tf.keras.Model):
         if self.dolinar_layers>1:
             self.reset_states() #otherwise is like not doing anything so no problem :-)
         else:
-            self(tf.reshape(unstacked_exp[1],(experiences.shape[0],1,1))) #just call it once to initialize
-
+            tf.reshape(unstacked_exp[1],(experiences.shape[0],1,1)) #just call it once to initialize
         return tf.stack(to_stack, axis=1)
+
+    @tf.function
+    def actor_grad_tf(self, dq_da, experiences, optimizer_actor):
+        finns = [tf.ones((experiences.shape[0], 1,1))*self.pad_value]
+        unstacked_exp = tf.unstack(experiences, axis=1)
+        for index in range(1,2*self.dolinar_layers-2,2):
+            finns.append(tf.reshape(unstacked_exp[index], (experiences.shape[0], 1,1)))
+        final_preds = tf.concat(finns, axis=1)
+        with tf.GradientTape() as tape:
+            tape.watch(self.trainable_variables)
+            final_preds = self(final_preds)
+        dq_da = tf.multiply(dq_da, -1/samples.shape[0])
+        da_dtheta=tape.gradient(final_preds, self.trainable_variables, output_gradients=dq_da) #- because you wanna minimize, and the Q value maximizes..
+            #/experiences.shape[0] because it's 1/N (this is checked in debugging actor notebook... proof of [...])
+        optimizer_actor.apply_gradients(zip(da_dtheta, self.trainable_variables))
+        return
 
     def __str__(self):
         return self.name
