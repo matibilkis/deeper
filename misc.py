@@ -249,7 +249,7 @@ class PolicyEvaluator(Basics):
         # else:
         #     return self.possible_phases[np.argmax(prob)]
 
-    def greedy_strategy(self, actor, critic, max_like_guess=True):
+    def greedy_strategy(self, actor, critic, max_like_guess=False):
         """
         Assuming actor, critic and self have the same dolinar_layers.
         self.possible_phases are the possible phases of the coherent states

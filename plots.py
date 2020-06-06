@@ -69,15 +69,15 @@ def profiles_kennedy(critic, directory, history_predictions=False):
 
 
 def just_plot(rt, pt, avg_train, helstrom, policy_evaluator, directory):
-    matplotlib.rc('font', serif='cm10')
+    matplotlib.rc('font', serif='cm100')
     matplotlib.rcParams['agg.path.chunksize'] = 10**8
 
     plt.rcParams.update({'font.size': 100})
     plt.rcParams.update({"agg.path.chunksize":10**8})
     plt.figure(figsize=(150,150), dpi=10)
-    ax1=plt.subplot2grid((1,3),(0,0))
-    ax2=plt.subplot2grid((1,3),(0,1))
-    ax3=plt.subplot2grid((1,3),(0,2))
+    ax1=plt.subplot2grid((1,2),(0,0))
+    ax2=plt.subplot2grid((1,2),(0,1))
+    # ax3=plt.subplot2grid((1,3),(0,2))
 
 
     T=len(rt)
@@ -104,14 +104,14 @@ def just_plot(rt, pt, avg_train, helstrom, policy_evaluator, directory):
     ax2.plot(np.log10(np.arange(1, len(betas_would_do)+1)),-np.ones(len(betas_would_do))*optimal_beta, color="black", linewidth=15, alpha=0.8)#, label="optimal-beta")
 
 
-    ax3.plot(np.arange(1,len(avg_train)+1),avg_train, color="black", linewidth=15, alpha=0.8, label="Critic's loss")
+    # ax3.plot(np.arange(1,len(avg_train)+1),avg_train, color="black", linewidth=5, alpha=0.8, label="Critic's loss")
 
 
 
-    for ax in [ax1, ax2, ax3]:
+    for ax in [ax1, ax2]:
         ax.legend(prop={"size":60})
 
-    ax1.set_xticks(range(int(np.log10(len(rt)))))
+    ax1.set_xticks(range(int(np.log10(len(rt)+1))))
     tticks=[]
     for k in range(int(np.log10(len(rt)+1))):
         tticks.append("10^"+str(k))

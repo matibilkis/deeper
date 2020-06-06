@@ -13,21 +13,18 @@
 
 
  -------------- Optimizers info: -------------- 
-
 Optimizer_critic: {'name': 'Adam', 'learning_rate': 0.01, 'decay': 0.0, 'beta_1': 0.9, 'beta_2': 0.999, 'epsilon': 1e-07, 'amsgrad': False} 
 Optimizer_actor: {'name': 'Adam', 'learning_rate': 0.005, 'decay': 0.0, 'beta_1': 0.9, 'beta_2': 0.999, 'epsilon': 1e-07, 'amsgrad': False}
 
 
  --------------  Buffer --------------
-
-Buffer Size: 1000
+Buffer Size: 100
  Batch_size for sampling: 7
 
 
  ------- Noise info ------- 
-
- epsilon-guess: 0.01
- Initial noise of displaacements: 1.0 
+epsilon-guess: 0.01
+ Initial noise of displaacements: 0.25 
  Reducing noise of displacements? True 
  Min_noise_value: 0.05
 

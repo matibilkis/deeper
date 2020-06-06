@@ -47,6 +47,7 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
 
     rt = []
     pt = []
+    pt_max_like=[]
     new_loss=0.
 
     ##### STORING FOLDER ####
@@ -56,10 +57,10 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
     directory ="results/run_" + str(numb)
 
     info = giq4ever
-    info += "\n\n -------------- Optimizers info: -------------- \n\nOptimizer_critic: {} \nOptimizer_actor: {}\n".format(optimizer_critic.get_config(), optimizer_actor.get_config())
+    info += "\n\n -------------- Optimizers info: -------------- \nOptimizer_critic: {} \nOptimizer_actor: {}\n".format(optimizer_critic.get_config(), optimizer_actor.get_config())
 
-    info += "\n\n --------------  Buffer --------------\n\nBuffer Size: {}\n Batch_size for sampling: {}\n".format(buffer.buffer_size, batch_size)
-    info += "\n\n ------- Noise info ------- \n\n epsilon-guess: {}\n Initial noise of displaacements: {} \n Reducing noise of displacements? {} \n Min_noise_value: {}".format(ep_guess,noise_displacement, reduce_noise,min_noise_value)
+    info += "\n\n --------------  Buffer --------------\nBuffer Size: {}\n Batch_size for sampling: {}\n".format(buffer.buffer_size, batch_size)
+    info += "\n\n ------- Noise info ------- \nepsilon-guess: {}\n Initial noise of displaacements: {} \n Reducing noise of displacements? {} \n Min_noise_value: {}".format(ep_guess,noise_displacement, reduce_noise,min_noise_value)
 
     info+= "\n\n --------------More hyperparameters and CV info-------------- \n\ntau: {} \nAmplitude: {}\nDolinar Layers: {}\nNumber of phases: {}".format(tau, env.amplitude, actor.dolinar_layers, env.number_phases)
     info+="\n\n********************\n\n********************\n\n********************"
@@ -78,7 +79,7 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
     ##### STORING FOLDER ####
     ##### STORING FOLDER ####
     avg_train = []
-    my_tau = total_episodes/np.log(1/min_noise_value**4) #for noise reduction, by the half of the experiment you begin to exploit. the max is because i'm sure i'll sometime set it to zero and forget about this. But it's called only one per run, so no worries :)
+    my_tau = total_episodes/np.log(1/min_noise_value**2) #for noise reduction, by the half of the experiment you begin to exploit. the max is because i'm sure i'll sometime set it to zero and forget about this. But it's called only one per run, so no worries :)
     #The idea of this is that i get to min_noise_value by half of the total_episodes, so i "explore" half and exploit the other half.
 ### e^{-t/\tau} = \ep0 -----> \tau = \frac{t}{\log (1\ep0) }
 
@@ -124,7 +125,8 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
         rt.append(reward)
         #notice it's important states of lstm actor are reset before calling this guy.
         #update: this is done inside misc.optimization_step
-        pt.append(policy_evaluator.greedy_strategy(actor = actor, critic = critic)) #information batch_size encoded in actor.batch_size_info
+        pt.append(policy_evaluator.greedy_strategy(actor = actor, critic = critic, max_like_guess=False)) #information batch_size encoded in actor.batch_size_info
+        pt_max_like.append(policy_evaluator.greedy_strategy(actor = actor, critic = critic, max_like_guess=True)) #information batch_size encoded in actor.batch_size_info
 
         if (buffer.count>batch_size):
             sampled_experiences = tf.convert_to_tensor(buffer.sample(batch_size), dtype=np.float32)
@@ -167,8 +169,10 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
         rrt.append(cumre)
     rrt = rrt/np.arange(1,len(rt)+1)
 
-    np.save(directory+"/learning_curves/", rrt)
-    np.save(directory+"/learning_curves/", pt)
+    np.save(directory+"/learning_curves/rt", rrt)
+    np.save(directory+"/learning_curves/pt_max_like", pt_max_like)
+    np.save(directory+"/learning_curves/pt_raw", pt)
+
     policy_evaluator.save_hisory_tree(directory+"/action_trees")
 
     for model, net_folder in zip([actor, actor_target, critic, critic_target],["actor_primary", "actor_target", "critic_primary", "critic_target"]):
@@ -196,27 +200,24 @@ reduce_noise=True
 
 
 
-information_runs="Information on all runs\n\n"
+info_runs="::Information on all runs::\n\n"
 
-for buffer_size in [10**3, 10**4, 10**6]:
+for buffer_size in [10**2, 10**3, 10**5]:
     for ep_greedy in [.01, .3, 1.]:
+        for noise_displacement in [.25, .5]:
 
-        begin = datetime.now()
 
-        name_run = RDPG(amplitude=amplitude, total_episodes=2*10**4, dolinar_layers=dolinar_layers, noise_displacement=noise_displacement, tau=tau,
-    buffer_size=buffer_size, batch_size=batch_size, lr_critic=lr_critic, lr_actor=lr_actor, ep_guess=ep_guess, reduce_noise=reduce_noise)
+            begin = datetime.now()
 
-        # infos_run +="***\n***\nname_run: {} ***\n\n\n\n Some details: \n\n tau: {}\nlr_critic: {}\nnoise_displacement: {}\nbatch_size: {}\n-------\n-------\n\n".format(name_run,tau, lr_critic, noise_displacement, batch_size)
-        # infos_run += "Noise reduction: {} \nep_guess: {}".format(reduce_noise, ep_guess)
-        info_run+="name_run: {}\ntotal_time: {}".format(name_run,str(datetime.now()- begin))
+            name_run = RDPG(amplitude=amplitude, total_episodes=3*10**4, dolinar_layers=dolinar_layers, noise_displacement=noise_displacement, tau=tau,
+        buffer_size=buffer_size, batch_size=batch_size, lr_critic=lr_critic, lr_actor=lr_actor, ep_guess=ep_greedy, reduce_noise=reduce_noise)
 
-        with open("results/info_runs.txt", 'a+') as f:
-            f.write(info_run)
-            f.close()
+            # infos_run +="***\n***\nname_run: {} ***\n\n\n\n Some details: \n\n tau: {}\nlr_critic: {}\nnoise_displacement: {}\nbatch_size: {}\n-------\n-------\n\n".format(name_run,tau, lr_critic, noise_displacement, batch_size)
+            # infos_run += "Noise reduction: {} \nep_guess: {}".format(reduce_noise, ep_guess)
+            info_runs+="name_run: {}\ntotal_time: {}\nbuffer_size: {}\nep_greedy: {}\n noise_displacement: {}\n\n".format(name_run,str(np.round(datetime.now()- begin,2)), buffer_size, ep_greedy, noise_displacement)
 
-        information_runs+="run_{}   buffer_size: {}   ep_greedy: {}".format(name_run, buffer_size, ep_greedy)
-        information_runs+="\n"
+
 
 with open("results/info_all_runs.txt", 'w') as f:
-    f.write(information_runs)
+    f.write(info_runs)
     f.close()
