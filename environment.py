@@ -82,6 +82,6 @@ class Environment(misc.Basics):
             phase_guess=self.possible_phases[guess]
             for layer in range(int(len(history)/2)):
                 effective_attenuation = np.prod(np.sin(self.at[:layer]))*np.cos(self.at[layer])#Warning one!
-                prob*=self.P(phase_guess*self.amplitude, history[layer], effective_attenuation, history[layer+1])/np.sum([self.P(ph*self.amplitude, history[layer], effective_attenuation, history[layer+1]) for ph in self.possible_phases])
+                prob*=self.P(phase_guess*self.amplitude, history[2*layer], effective_attenuation, history[2*layer+1])/np.sum([self.P(ph*self.amplitude, history[2*layer], effective_attenuation, history[2*layer+1]) for ph in self.possible_phases])
             return prob
             #I take a history of #(beta, outcome, beta, outcome)...

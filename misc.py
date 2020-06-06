@@ -249,35 +249,34 @@ class PolicyEvaluator(Basics):
         # else:
         #     return self.possible_phases[np.argmax(prob)]
 
-    def greedy_strategy(self, actor, critic):
+    def greedy_strategy(self, actor, critic, max_like_guess=True):
         """
         Assuming actor, critic and self have the same dolinar_layers.
-            self.possible_phases are the possible phases of the coherent states
+        self.possible_phases are the possible phases of the coherent states
 
         """
-
+        actor.reset_states()
         rr = np.ones((2**(self.dolinar_layers-1), self.dolinar_layers, 1))*actor.pad_value
         if self.dolinar_layers != 1:
             rr[:,1:] = np.reshape(outcomes_universe(self.dolinar_layers-1),(2**(self.dolinar_layers-1), self.dolinar_layers-1,1))
-
-        actor.lstm.stateful = False
-        preds = np.squeeze(actor(rr))
-        actor.lstm.stateful = True
+        rr = np.reshape(rr.repeat(actor.batch_size_info),(actor.batch_size_info,)+rr.shape[1:])
+        preds = np.squeeze(actor(rr)[0])
 
         if self.dolinar_layers==1:
             history = preds
             self.history_tree[str(0)][str([])] = preds
             for final_outcome in [[0], [1]]:
                 final_history = np.append(history, final_outcome)
-                self.history_tree[str(self.dolinar_layers)][str(final_outcome)] = self.possible_phases[self.give_max_lik_guess(final_history)]
-
+                if max_like_guess:
+                    self.history_tree[str(self.dolinar_layers)][str(final_outcome)] = self.possible_phases[self.give_max_lik_guess(final_history)]
+                else:
+                    self.history_tree[str(self.dolinar_layers)][str(final_outcome)] =  self.possible_phases[critic.give_favourite_guess(final_history)]
+                 #self.possible_phases[self.give_max_lik_guess(final_history)]
             return self.success_probability(self.history_tree)
         else:
-
             for ot, seqot in zip(outcomes_universe(self.dolinar_layers-1), preds):
                 for layer in range(self.dolinar_layers):
                     self.history_tree[str(layer)][str(ot[:layer])] = seqot[layer]
-
                 history = []
                 index_seqot, index_ot= 0, 0
                 for index_history in range(2*self.dolinar_layers-1):
@@ -289,36 +288,37 @@ class PolicyEvaluator(Basics):
                         index_ot+=1
                 for final_outcome in [[0],[1]]:
                     final_history = np.append(history, final_outcome)
-                    #self.history_tree[str(self.dolinar_layers)][str(np.append(ot,final_outcome))] = self.possible_phases[critic.give_favourite_guess(final_history)[0]]
-                    self.history_tree[str(self.dolinar_layers)][str(np.append(ot,final_outcome))] = self.possible_phases[self.give_max_lik_guess(final_history)]
+                    if max_like_guess:
+                        self.history_tree[str(self.dolinar_layers)][str(np.append(ot,final_outcome))] = self.possible_phases[self.give_max_lik_guess(final_history)]
+                    else:
+                        self.history_tree[str(self.dolinar_layers)][str(np.append(ot,final_outcome))] = self.possible_phases[critic.give_favourite_guess(final_history)[0]]
+            return self.success_probability(self.history_tree)
 
 
-        return self.success_probability(self.history_tree)
+def record(folder="results"):
 
-
-def record():
-    if not os.path.exists("results/number_rune.txt"):
-        with open("results/number_rune.txt", "w+") as f:
+    if not os.path.exists(folder+"/number_rune.txt"):
+        with open(folder+"/number_rune.txt", "w+") as f:
             f.write("0")
             f.close()
         a=0
         number_run=0
     else:
-        with open("results/number_rune.txt", "r") as f:
+        with open(folder+"/number_rune.txt", "r") as f:
             a = f.readlines()[0]
             f.close()
-        with open("results/number_rune.txt", "w") as f:
+        with open(folder+"/number_rune.txt", "w") as f:
             f.truncate(0)
             f.write(str(int(a)+1))
             f.close()
         number_run = int(a)+1
-    if not os.path.exists("run_"+str(number_run)):
-        os.makedirs("results/run_"+str(number_run))
-        os.makedirs("results/run_"+str(number_run)+"/learning_curves")
-        os.makedirs("results/run_"+str(number_run)+"/action_trees")
+    if not os.path.exists(folder+"run_"+str(number_run)):
+        os.makedirs(folder+"/run_"+str(number_run))
+        os.makedirs(folder+"/run_"+str(number_run)+"/learning_curves")
+        os.makedirs(folder+"/run_"+str(number_run)+"/action_trees")
 
         for net in ["actor_primary", "actor_target", "critic_primary", "critic_target"]:
-            os.makedirs("results/run_"+str(number_run)+"/networks/"+net)
+            os.makedirs(folder+"/run_"+str(number_run)+"/networks/"+net)
 
     return number_run
 
@@ -345,17 +345,20 @@ def croots(n):
         return None
     return (Complex(cmath.rect(1, 2 * k * cmath.pi / n)) for k in range(n))
 
-def optimization_step(experiences, critic, critic_target, actor, actor_target, optimizer_critic, optimizer_actor):
-    # actor.lstm.reset_states()
-    # experiences = experiences.astype(np.float32)
-    targeted_experience = actor_target.process_sequence_of_experiences_tf(experiences)
+def optimization_step(sampled_from_buffer, critic, critic_target, actor, actor_target, optimizer_critic, optimizer_actor, batch_size, current_episode):
+    #
+    actor_target.reset_states()
+
+    targeted_experience = actor_target.process_sequence_of_experiences_tf(sampled_from_buffer)
     batched_input, zeroed_rews = critic_target.process_sequence_tf(targeted_experience)
     labels_critic = critic_target.give_td_errors_tf( batched_input, zeroed_rews)
-
     loss_critic = critic.step_critic_tf(batched_input ,labels_critic, optimizer_critic)
 
-    dq_da = critic.critic_grad_tf(experiences)
-    actor.actor_grad_tf(dq_da, experiences, optimizer_actor)
+    if current_episode > 10**3:
+        actor.reset_states()
+        actored_experiences = actor.process_sequence_of_experiences_tf(sampled_from_buffer)
+        dq_da = tf.clip_by_value(critic.critic_grad_tf(actored_experiences), -10e-5, 10e-5) ### To do, check if this does the correct thing for L>1
+        actor.actor_grad_tf(dq_da, sampled_from_buffer, optimizer_actor)
     return loss_critic
 
 # @tf.function

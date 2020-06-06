@@ -1,7 +1,0 @@
-amplitude=0.4
-tau = .05
-lr_critic = 0.0001
-lr_actor=0.001
-noise_displacement = .5
-batch_size = 128
-ep_guess=0.01

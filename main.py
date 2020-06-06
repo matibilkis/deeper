@@ -16,10 +16,18 @@ import misc
 import nets
 from buffer import ReplayBuffer
 from datetime import datetime
-tf.config.experimental_run_functions_eagerly(True)
+from art import text2art
+# tf.config.experimental_run_functions_eagerly(True)
+
+##### TO DO: see what's wrong with internal states assigment of the lstm when
+# I change the batch_size.
+
+#On way to overcome this is to pad all values, so you don't need to reset batch size.
+
+giq4ever = text2art("%GIQ \n4ever")
 
 def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, total_episodes = 10**3, buffer_size=500, batch_size=64, ep_guess=0.01,
- noise_displacement=0.5, lr_actor=0.01, lr_critic=0.001, tau=0.005):
+ noise_displacement=0.5, lr_actor=0.01, lr_critic=0.001, tau=0.005, reduce_noise=True, min_noise_value=0.05):
 
     if not os.path.exists("results"):
         os.makedirs("results")
@@ -28,9 +36,9 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
     buffer = ReplayBuffer(buffer_size=buffer_size)
 
     critic = nets.Critic(nature="primary", dolinar_layers = dolinar_layers, number_phases=number_phases)
-    critic_target = nets.Critic(nature="target", dolinar_layers = dolinar_layers, number_phases=number_phases)
-    actor = nets.Actor(nature="primary", dolinar_layers = dolinar_layers)
-    actor_target = nets.Actor(nature="target", dolinar_layers = dolinar_layers)
+    critic_target = nets.Critic(nature="target", dolinar_layers = dolinar_layers, number_phases=number_phases, tau = tau)
+    actor = nets.Actor(nature="primary", dolinar_layers = dolinar_layers, batch_size_info=batch_size)
+    actor_target = nets.Actor(nature="target", dolinar_layers = dolinar_layers, tau = tau, batch_size_info=batch_size)
 
     optimizer_critic = tf.keras.optimizers.Adam(lr=lr_critic)
     optimizer_actor = tf.keras.optimizers.Adam(lr=lr_actor)
@@ -47,32 +55,48 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
     numb = misc.record()
     directory ="results/run_" + str(numb)
 
+    info = giq4ever
+    info += "\n\n -------------- Optimizers info: -------------- \n\nOptimizer_critic: {} \nOptimizer_actor: {}\n".format(optimizer_critic.get_config(), optimizer_actor.get_config())
 
-    info_optimizers = "optimizer_critic_guess: {} \nOptimizer_actor_l0: {}\n".format(optimizer_critic.get_config(), optimizer_actor.get_config())
-    infor_buffer = "Buffer_size: {}\n Batch_size for sampling: {}\n".format(buffer.buffer_size, batch_size)
-    info_epsilons= "epsilon-guess: {}\nepsilon_displacement_noise: {}".format(ep_guess,noise_displacement)
+    info += "\n\n --------------  Buffer --------------\n\nBuffer Size: {}\n Batch_size for sampling: {}\n".format(buffer.buffer_size, batch_size)
+    info += "\n\n ------- Noise info ------- \n\n epsilon-guess: {}\n Initial noise of displaacements: {} \n Reducing noise of displacements? {} \n Min_noise_value: {}".format(ep_guess,noise_displacement, reduce_noise,min_noise_value)
 
-    data = "tau: {}".format(tau) + "\n \n**** optimizers ***\n"+info_optimizers+"\n\n\n*** BUFFER ***\n"+infor_buffer+"\n\n\n *** NOISE PARAMETERS *** \n"+info_epsilons
+    info+= "\n\n --------------More hyperparameters and CV info-------------- \n\ntau: {} \nAmplitude: {}\nDolinar Layers: {}\nNumber of phases: {}".format(tau, env.amplitude, actor.dolinar_layers, env.number_phases)
+    info+="\n\n********************\n\n********************\n\n********************"
+    info+=text2art("That's all folks!")
+
     with open(directory+"/info.txt", 'w') as f:
-        f.write(data)
+        f.write(info)
         f.close()
 
-    print("Beggining to train! \n \n")
-    print("starting time: {}".format(datetime.now().strftime("%Y%m%d-%H%M%S")))
+    print(text2art("Beggining the train! "))
+    print("\n\n")
+    print("Starting time: {}".format(datetime.now().strftime("%Y%m%d-%H%M%S")))
+    print("\n\n")
     print("saving results in " + str(directory))
+    ##### STORING FOLDER ####
+    ##### STORING FOLDER ####
+    ##### STORING FOLDER ####
     avg_train = []
-    ##### STORING FOLDER ####
-    ##### STORING FOLDER ####
-    ##### STORING FOLDER ####
+    my_tau = total_episodes/np.log(1/min_noise_value**4) #for noise reduction, by the half of the experiment you begin to exploit. the max is because i'm sure i'll sometime set it to zero and forget about this. But it's called only one per run, so no worries :)
+    #The idea of this is that i get to min_noise_value by half of the total_episodes, so i "explore" half and exploit the other half.
+### e^{-t/\tau} = \ep0 -----> \tau = \frac{t}{\log (1\ep0) }
+
+### just to initialize the netwroks####
+    context_outcome_actor = np.reshape(np.array([actor.pad_value]*batch_size),(batch_size,1,1)).astype(np.float32)
+    actor(context_outcome_actor)
+    actor_target(context_outcome_actor)
+    actor.lstm.reset_states()
+### just to initialize the netwroks####
 
     for episode in tqdm(range(total_episodes)):
 
         env.pick_phase()
         experiences=[] #where the current history of the current episode is stored
-        context_outcome_actor = np.reshape(np.array([actor.pad_value]),(1,1,1)).astype(np.float32)
+        context_outcome_actor = np.reshape(np.array([actor.pad_value]*batch_size),(batch_size,1,1)).astype(np.float32) #this is fixed because actor has stateful lstm. Changing the atch_size didn't worked to me if excution was not eagerly.
         outcomes_so_far = []
         for layer in range(actor.dolinar_layers):
-            beta_would_do = np.squeeze(actor(context_outcome_actor))
+            beta_would_do = np.squeeze(actor(context_outcome_actor)[0]) #don't worry, actor is deerrmnistic hence all batch_size elemtens are same
             beta =  beta_would_do + np.random.uniform(-noise_displacement, noise_displacement)#np.clip(,-2*amplitude,2*amplitude)
             policy_evaluator.recorded_trajectory_tree[str(layer)][str(np.array(outcomes_so_far))].append(beta)
             policy_evaluator.recorded_trajectory_tree_would_do[str(layer)][str(np.array(outcomes_so_far))].append(beta_would_do)
@@ -81,41 +105,38 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
             outcomes_so_far.append(int(outcome))
             experiences.append(beta)
             experiences.append(outcome)
-            context_outcome_actor = np.reshape(np.array([outcome]),(1,1,1)).astype(np.float32)
+            context_outcome_actor = np.reshape(np.array([outcome]*batch_size),(batch_size,1,1)).astype(np.float32)
+
 
         ### ep-gredy guessing of the phase###
         # ### ep-gredy guessing of the phase###
         if np.random.random()<ep_guess:
             guess_index = np.random.choice(range(number_phases),1)[0]
-            # guess_index, guess_phase = val, pol.possible_phases[val]
         else:
             guess_index = critic.give_favourite_guess(experiences) #experiences is the branch of the current tree
 
         experiences.append(guess_index)
-        reward = env.give_reward(guess_index)#, modality="bit_stochastic", history = experiences[:-1])
-
+        reward = env.give_reward(guess_index, modality="bit_stochastic", history = experiences[:-1])
         experiences.append(reward)
+
         buffer.add(tuple(experiences))
 
         rt.append(reward)
-        pt.append(policy_evaluator.greedy_strategy(actor = actor, critic = critic))
-
-        ###### OPTIMIZATION STEP ######
+        #notice it's important states of lstm actor are reset before calling this guy.
+        #update: this is done inside misc.optimization_step
+        pt.append(policy_evaluator.greedy_strategy(actor = actor, critic = critic)) #information batch_size encoded in actor.batch_size_info
 
         if (buffer.count>batch_size):
             sampled_experiences = tf.convert_to_tensor(buffer.sample(batch_size), dtype=np.float32)
-
-            actor.lstm.stateful=False
-            actor.reset_states_workaround(new_batch_size=int(batch_size))
-
-            new_loss = misc.optimization_step(sampled_experiences, critic, critic_target, actor, actor_target, optimizer_critic, optimizer_actor)
+            new_loss = misc.optimization_step(sampled_experiences, critic, critic_target, actor, actor_target, optimizer_critic, optimizer_actor,batch_size, episode)
             new_loss = new_loss.numpy()
-            actor.reset_states_workaround(new_batch_size=1)
-            actor.lstm.stateful=True
+
 
             critic_target.update_target_parameters(critic)
-            actor_target.update_target_parameters(actor)
-            noise_displacement = max(0.2,0.99*noise_displacement)
+            if actor_target.dolinar_layers>1: #otherwise is unusedp
+                actor_target.update_target_parameters(actor)
+            if reduce_noise:
+                noise_displacement = max(min_noise_value,np.exp(-episode/my_tau))
 
             if episode%(int((total_episodes-batch_size)/10)) == 1:
                 var_exists = 'history_predictions' in locals() or 'history_predictions' in globals()
@@ -156,63 +177,46 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
     if dolinar_layers  ==1:
         profiles_kennedy(critic, directory, history_predictions)
     # BigPlot(buffer,rt, pt, history_betas, history_betas_would_have_done, histo_preds, losses, directory)
-    return
+    return "run_"+str(numb)
 
 
 info_run = ""
 to_csv=[]
 amplitude=0.4
-tau = 0.01
 lr_critic = 0.01
-lr_actor = 0.01
-noise_displacement = 1
-ep_guess=1
+lr_actor = 0.005
+ep_guess=.01
 dolinar_layers=1
 number_phases=2
-buffer_size = 10**2
-#no_delete_variables =
-#["no_delete_variables","amplitude", "to_csv","tau", "lr_critic", "lr_actor", "noise_displacement", "ep_guess", "dolinar_layers", "number_phases", "buffer_size", "batch_size"]
-
-for batch_size in [32, 64, 128.]:
-    for tau in [0.01]:
-        for lr_actor in [0.001]:
-
-            begin = datetime.now()
-
-            name_run = RDPG(amplitude=amplitude, total_episodes=2*10**3, dolinar_layers=dolinar_layers, noise_displacement=noise_displacement, tau=tau,
-        buffer_size=buffer_size, batch_size=batch_size, lr_critic=lr_critic, lr_actor=lr_actor, ep_guess=ep_guess)
-
-            info_run +="***\n***\nname_run: {} ***\ntau: {}\nlr_critic: {}\nnoise_displacement: {}\nbatch_size: {}\n-------\n-------\n\n".format(name_run,tau, lr_critic, noise_displacement, batch_size)
-
-            info_run += "\n\n TOTAL_TIME: {}".format(str(begin-datetime.now()))
-            #
-            # to_csv.append({"name_run":"run_"+str(name_run), "tau": tau, "lr_critic":lr_critic, "noise_displacement": noise_displacement,
-            # "BS":batch_size})
-
-            with open("results/info_runs.txt", 'a+') as f:
-                f.write(info_run)
-                f.close()
-
-    # for name in dir():
-    #     if (name.startswith('_'))|(name in ["RDPG", "no_delete_variables","amplitude", "to_csv","tau", "lr_critic", "lr_actor", "noise_displacement", "ep_guess", "dolinar_layers", "number_phases", "buffer_size", "batch_size","to_csv"]):
-    #        pass
-    #     else:
-    #        del globals()[name]
+tau = 0.01
+batch_size=7
+noise_displacement=1.
+reduce_noise=True
 
 
-    ##### if we put more runs... ###
-    # pp = pd.DataFrame(to_csv)
-    # pp.to_csv("results/panda_info.csv")
 
 
-##################time 10**4  without tf.function ################
-###with tf.function 22 min 10**4, batch_size =8
-#### without batch 16- 1.10 hours, 32. takes ~2 hourse, 64 ~ 3hourse, 128>5 hourse
+information_runs="Information on all runs\n\n"
 
+for buffer_size in [10**3, 10**4, 10**6]:
+    for ep_greedy in [.01, .3, 1.]:
 
-# ##
-#         for name in dir():
-#             if (name.startswith('_'))|(name in ["RDPG", "no_delete_variables","amplitude", "to_csv","tau", "lr_critic", "lr_actor", "noise_displacement", "ep_guess", "dolinar_layers", "number_phases", "buffer_size", "batch_size","to_csv","os", "datetime","begin","Environment", "just_plot", "profiles_kennedy", "ReplayBuffer", "datetime","nets","misc","np", "plt", "os", "tqdm", "deque", "random", "matplotlib"]):
-#                pass
-#             else:
-#                del globals()[name]
+        begin = datetime.now()
+
+        name_run = RDPG(amplitude=amplitude, total_episodes=2*10**4, dolinar_layers=dolinar_layers, noise_displacement=noise_displacement, tau=tau,
+    buffer_size=buffer_size, batch_size=batch_size, lr_critic=lr_critic, lr_actor=lr_actor, ep_guess=ep_guess, reduce_noise=reduce_noise)
+
+        # infos_run +="***\n***\nname_run: {} ***\n\n\n\n Some details: \n\n tau: {}\nlr_critic: {}\nnoise_displacement: {}\nbatch_size: {}\n-------\n-------\n\n".format(name_run,tau, lr_critic, noise_displacement, batch_size)
+        # infos_run += "Noise reduction: {} \nep_guess: {}".format(reduce_noise, ep_guess)
+        info_run+="name_run: {}\ntotal_time: {}".format(name_run,str(datetime.now()- begin))
+
+        with open("results/info_runs.txt", 'a+') as f:
+            f.write(info_run)
+            f.close()
+
+        information_runs+="run_{}   buffer_size: {}   ep_greedy: {}".format(name_run, buffer_size, ep_greedy)
+        information_runs+="\n"
+
+with open("results/info_all_runs.txt", 'w') as f:
+    f.write(information_runs)
+    f.close()

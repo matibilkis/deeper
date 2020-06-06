@@ -2,13 +2,15 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 from misc import Prob, ps_maxlik, qval
-
+import tensorflow as tf
+matplotlib.rc('font', serif='cm10')
+matplotlib.rcParams['agg.path.chunksize'] = 10**8
 
 def profiles_kennedy(critic, directory, history_predictions=False):
-    import tensorflow as tf
-    matplotlib.rc('font', serif='cm10')
     plt.rcParams.update({'font.size': 100})
-    plt.figure(figsize=(150,150), dpi=50)
+    matplotlib.rcParams['agg.path.chunksize'] = 10**8
+
+    plt.figure(figsize=(150,150), dpi=10)
 
 
     ax1 = plt.subplot2grid((2,2),(0,0))
@@ -68,8 +70,11 @@ def profiles_kennedy(critic, directory, history_predictions=False):
 
 def just_plot(rt, pt, avg_train, helstrom, policy_evaluator, directory):
     matplotlib.rc('font', serif='cm10')
+    matplotlib.rcParams['agg.path.chunksize'] = 10**8
+
     plt.rcParams.update({'font.size': 100})
-    plt.figure(figsize=(150,150), dpi=50)
+    plt.rcParams.update({"agg.path.chunksize":10**8})
+    plt.figure(figsize=(150,150), dpi=10)
     ax1=plt.subplot2grid((1,3),(0,0))
     ax2=plt.subplot2grid((1,3),(0,1))
     ax3=plt.subplot2grid((1,3),(0,2))
@@ -80,8 +85,10 @@ def just_plot(rt, pt, avg_train, helstrom, policy_evaluator, directory):
     optimal_beta= -0.7499999999999993
 
     ax1.plot(np.log10(np.arange(1,T+1)),rt, color="red", linewidth=15, alpha=0.8, label=r'$R_t$')
-    ax1.plot(np.log10(np.arange(1,T+1)),optimal*np.ones(T), color="black",  linewidth=15,alpha=0.5, label="Helstrom Bound")
-    ax1.plot(np.log10(np.arange(1,T+1)),optimal*np.ones(T), color="black",  linewidth=15,alpha=0.5, label="Optimal 1L" +r'$\alpha = 0.4$')
+    if policy_evaluator.dolinar_layers==1:
+        ax1.plot(np.log10(np.arange(1,T+1)),optimal*np.ones(T), color="black",  linewidth=15,alpha=0.5, label="Optimal 1L")
+    else:
+        ax1.plot(np.log10(np.arange(1,T+1)),helstrom*np.ones(T), color="black",  linewidth=15,alpha=0.5, label="Helstrom bound" +r'$\alpha = 0.4$')
     ax1.plot(np.log10(np.arange(1,T+1)),pt, color="blue", linewidth=15, alpha=0.8, label=r'$P_t$')
 
     outcomes_so_far=[]
@@ -119,7 +126,7 @@ def BigPlot(buffer, rt, pt, history_betas, history_betas_would_have_done, histo_
     matplotlib.rc('font', serif='cm10')
     plt.rcParams.update({'font.size': 40})
 
-    plt.figure(figsize=(60,60), dpi=100)
+    plt.figure(figsize=(60,60), dpi=10)
     plt.subplots_adjust(wspace=0.5, hspace=0.3)
 
     T=len(rt)
