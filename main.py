@@ -79,9 +79,9 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
     ##### STORING FOLDER ####
     ##### STORING FOLDER ####
     avg_train = []
-    my_tau = total_episodes/np.log(1/min_noise_value**2) #for noise reduction, by the half of the experiment you begin to exploit. the max is because i'm sure i'll sometime set it to zero and forget about this. But it's called only one per run, so no worries :)
+    my_tau = (total_episodes)/np.log(1/min_noise_value**4) #for noise reduction, by the half of the experiment you begin to exploit. the max is because i'm sure i'll sometime set it to zero and forget about this. But it's called only one per run, so no worries :)
     #The idea of this is that i get to min_noise_value by half of the total_episodes, so i "explore" half and exploit the other half.
-### e^{-t/\tau} = \ep0 -----> \tau = \frac{t}{\log (1\ep0) }
+### e^{-t/\tau} = \ep0 -----> \tau = \frac{t}{\log (1\ep0)
 
 ### just to initialize the netwroks####
     context_outcome_actor = np.reshape(np.array([actor.pad_value]*batch_size),(batch_size,1,1)).astype(np.float32)
@@ -201,20 +201,19 @@ reduce_noise=True
 
 
 info_runs="::Information on all runs::\n\n"
+for batch_size in [8, 16, 64, 128]:
+    for buffer_size in [5*10**2, 10**3, 10**5]:
+        for ep_greedy in [.01, .3, 1.]:
+            for noise_displacement in [.25, .5,1.]:
 
-for buffer_size in [10**2, 10**3, 10**5]:
-    for ep_greedy in [.01, .3, 1.]:
-        for noise_displacement in [.25, .5]:
+                begin = datetime.now()
 
+                name_run = RDPG(amplitude=amplitude, total_episodes=5*10**4, dolinar_layers=dolinar_layers, noise_displacement=noise_displacement, tau=tau,
+            buffer_size=buffer_size, batch_size=batch_size, lr_critic=lr_critic, lr_actor=lr_actor, ep_guess=ep_greedy, reduce_noise=reduce_noise)
 
-            begin = datetime.now()
-
-            name_run = RDPG(amplitude=amplitude, total_episodes=3*10**4, dolinar_layers=dolinar_layers, noise_displacement=noise_displacement, tau=tau,
-        buffer_size=buffer_size, batch_size=batch_size, lr_critic=lr_critic, lr_actor=lr_actor, ep_guess=ep_greedy, reduce_noise=reduce_noise)
-
-            # infos_run +="***\n***\nname_run: {} ***\n\n\n\n Some details: \n\n tau: {}\nlr_critic: {}\nnoise_displacement: {}\nbatch_size: {}\n-------\n-------\n\n".format(name_run,tau, lr_critic, noise_displacement, batch_size)
-            # infos_run += "Noise reduction: {} \nep_guess: {}".format(reduce_noise, ep_guess)
-            info_runs+="name_run: {}\ntotal_time: {}\nbuffer_size: {}\nep_greedy: {}\n noise_displacement: {}\n\n".format(name_run,str(np.round(datetime.now()- begin,2)), buffer_size, ep_greedy, noise_displacement)
+                # infos_run +="***\n***\nname_run: {} ***\n\n\n\n Some details: \n\n tau: {}\nlr_critic: {}\nnoise_displacement: {}\nbatch_size: {}\n-------\n-------\n\n".format(name_run,tau, lr_critic, noise_displacement, batch_size)
+                # infos_run += "Noise reduction: {} \nep_guess: {}".format(reduce_noise, ep_guess)
+                info_runs+="name_run: {}\ntotal_time: {}\nbuffer_size: {}\nep_greedy: {}\n noise_displacement: {}\nbatch_size: {}\n".format(name_run,str(datetime.now()- begin), buffer_size, ep_greedy, noise_displacement,batch_size)
 
 
 

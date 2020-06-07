@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from misc import Prob, ps_maxlik, qval
 import tensorflow as tf
-matplotlib.rc('font', serif='cm10')
 matplotlib.rcParams['agg.path.chunksize'] = 10**8
 
 def profiles_kennedy(critic, directory, history_predictions=False):
@@ -58,8 +57,8 @@ def profiles_kennedy(critic, directory, history_predictions=False):
     ax3.plot(betas,ps_maxlik(betas), linewidth=7, color="red", label="P*")
 
     for ax in [ax1, ax2, ax3]:
-        ax.set_xlabel(r'$\beta$', size=20)
-        ax.legend(prop={"size":15})
+        ax.set_xlabel(r'$\beta$', size=400)
+        ax.legend(prop={"size":120})
 
 
     plt.savefig(directory+"/kennedy_profiles")
@@ -109,11 +108,11 @@ def just_plot(rt, pt, avg_train, helstrom, policy_evaluator, directory):
 
 
     for ax in [ax1, ax2]:
-        ax.legend(prop={"size":60})
+        ax.legend(prop={"size":200})
 
-    ax1.set_xticks(range(int(np.log10(len(rt)+1))))
+    ax1.set_xticks(range(int(np.log10(len(rt)+2))))
     tticks=[]
-    for k in range(int(np.log10(len(rt)+1))):
+    for k in range(int(np.log10(len(rt)+2))):
         tticks.append("10^"+str(k))
     ax1.set_xticklabels(tticks)
 

@@ -228,7 +228,7 @@ class Critic(tf.keras.Model):
 
 ##### ACTOR CLASSS ####
 class Actor(tf.keras.Model):
-    def __init__(self, nature, seed_val=0.01, pad_value = -7.,
+    def __init__(self, nature, seed_val=0.1, pad_value = -7.,
                  dolinar_layers=2,tau=0.01,dropout_rate=0.0, batch_size_info=1):
         super(Actor,self).__init__()
         self.dolinar_layers = dolinar_layers
