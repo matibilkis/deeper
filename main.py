@@ -199,7 +199,7 @@ reduce_noise=True
 
 
 
-
+name_run=0
 info_runs="::Information on all runs::\n\n"
 for batch_size in [8, 16, 64, 128]:
     for buffer_size in [5*10**2, 10**3, 10**5]:
@@ -207,13 +207,13 @@ for batch_size in [8, 16, 64, 128]:
             for noise_displacement in [.25, .5,1.]:
 
                 begin = datetime.now()
-
-                name_run = RDPG(amplitude=amplitude, total_episodes=5*10**4, dolinar_layers=dolinar_layers, noise_displacement=noise_displacement, tau=tau,
-            buffer_size=buffer_size, batch_size=batch_size, lr_critic=lr_critic, lr_actor=lr_actor, ep_guess=ep_greedy, reduce_noise=reduce_noise)
+            #     name_run = RDPG(amplitude=amplitude, total_episodes=7*10**4, dolinar_layers=dolinar_layers, noise_displacement=noise_displacement, tau=tau,
+            # buffer_size=buffer_size, batch_size=batch_size, lr_critic=lr_critic, lr_actor=lr_actor, ep_guess=ep_greedy, reduce_noise=reduce_noise)
 
                 # infos_run +="***\n***\nname_run: {} ***\n\n\n\n Some details: \n\n tau: {}\nlr_critic: {}\nnoise_displacement: {}\nbatch_size: {}\n-------\n-------\n\n".format(name_run,tau, lr_critic, noise_displacement, batch_size)
                 # infos_run += "Noise reduction: {} \nep_guess: {}".format(reduce_noise, ep_guess)
                 info_runs+="name_run: {}\ntotal_time: {}\nbuffer_size: {}\nep_greedy: {}\n noise_displacement: {}\nbatch_size: {}\n".format(name_run,str(datetime.now()- begin), buffer_size, ep_greedy, noise_displacement,batch_size)
+                name_run+=1
 
 
 
