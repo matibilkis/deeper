@@ -17,6 +17,8 @@ import nets
 from buffer import ReplayBuffer
 from datetime import datetime
 from art import text2art
+
+
 # tf.config.experimental_run_functions_eagerly(True)
 
 ##### TO DO: see what's wrong with internal states assigment of the lstm when
@@ -211,14 +213,14 @@ info_runs="::Information on all runs::\n\n"
 for batch_size in [16]:
     for buffer_size in [10**3]:
         for ep_greedy in [.01]:
-            for noise_displacement in [.1]:
+            for noise_displacement in [.1, .05]:
 
                 begin = datetime.now()
                 name_run = RDPG(amplitude=amplitude, total_episodes=10**2, dolinar_layers=dolinar_layers, noise_displacement=noise_displacement, tau=tau,
             buffer_size=buffer_size, batch_size=batch_size, lr_critic=lr_critic, lr_actor=lr_actor, ep_guess=ep_greedy, reduce_noise=reduce_noise)
 
 
-                info_runs+="name_run: {}\ntotal_time: {}\nbuffer_size: {}\nep_greedy: {}\n noise_displacement: {}\nbatch_size: {}\n".format(name_run,str(datetime.now()- begin), buffer_size, ep_greedy, noise_displacement,batch_size)
+                info_runs+="\nname_run: {}\ntotal_time: {}\nbuffer_size: {}\nep_greedy: {}\n noise_displacement: {}\nbatch_size: {}\n\n".format(name_run,str(datetime.now()- begin), buffer_size, ep_greedy, noise_displacement,batch_size)
 
 
 

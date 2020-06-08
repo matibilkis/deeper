@@ -276,7 +276,7 @@ class Actor(tf.keras.Model):
         # feat = tf.nn.dropout(feat, rate=self.dropout_rate)
         # feat = tf.nn.sigmoid(self.l2(feat))
         # feat = tf.nn.sigmoid(self.l3(feat))
-        feat = tf.nn.sigmoid(self.l4(feat))
+        feat = tf.nn.tanh(self.l4(feat))
         # feat = tf.clip_by_value(feat, 0.0, 1.0)
         return feat
 

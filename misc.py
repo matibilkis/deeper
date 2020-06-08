@@ -6,6 +6,7 @@ from math import erf
 import pickle
 import tensorflow as tf
 
+
 ############################ ONLY FOR FIRST LAYER #############
 ############################ ONLY FOR FIRST LAYER #############
 ############################ ONLY FOR FIRST LAYER #############
