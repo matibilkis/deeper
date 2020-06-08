@@ -125,8 +125,8 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
         rt.append(reward)
         #notice it's important states of lstm actor are reset before calling this guy.
         #update: this is done inside misc.optimization_step
-        pt.append(policy_evaluator.greedy_strategy(actor = actor, critic = critic, max_like_guess=False)) #information batch_size encoded in actor.batch_size_info
-        pt_max_like.append(policy_evaluator.greedy_strategy(actor = actor, critic = critic, max_like_guess=True)) #information batch_size encoded in actor.batch_size_info
+
+
 
         if (buffer.count>batch_size):
             sampled_experiences = tf.convert_to_tensor(buffer.sample(batch_size), dtype=np.float32)
@@ -139,6 +139,9 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
                 actor_target.update_target_parameters(actor)
             if reduce_noise:
                 noise_displacement = max(min_noise_value,np.exp(-episode/my_tau))
+
+            pt.append(policy_evaluator.greedy_strategy(actor = actor, critic = critic, max_like_guess=False)) #information batch_size encoded in actor.batch_size_info
+            pt_max_like.append(policy_evaluator.greedy_strategy(actor = actor, critic = critic, max_like_guess=True)) #information batch_size encoded in actor.batch_size_info
 
             if episode%(int((total_episodes-batch_size)/10)) == 1:
                 var_exists = 'history_predictions' in locals() or 'history_predictions' in globals()
@@ -156,6 +159,10 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
                         for k in tf.unstack(inps):
                             m.append(tf.concat([k, np.reshape(np.array([outcome,guess_index]), (1,2))], axis=0))
                         history_predictions[str(episode)][str(outcome)+str(guess_index)] = np.squeeze(critic(tf.stack(m, axis=0)))[:,1]
+        else:
+            pt.append(1/env.number_phases)
+            pt_max_like.append(1/env.number_phases)
+
         ###### OPTIMIZATION STEP ######
         ###### OPTIMIZATION STEP ######
 
@@ -190,7 +197,7 @@ amplitude=0.4
 lr_critic = 0.01
 lr_actor = 0.005
 ep_guess=.01
-dolinar_layers=1
+dolinar_layers=2
 number_phases=2
 tau = 0.01
 batch_size=7
@@ -201,19 +208,17 @@ reduce_noise=True
 
 name_run=0
 info_runs="::Information on all runs::\n\n"
-for batch_size in [8, 16, 64, 128]:
-    for buffer_size in [5*10**2, 10**3, 10**5]:
-        for ep_greedy in [.01, .3, 1.]:
-            for noise_displacement in [.25, .5,1.]:
+for batch_size in [16]:
+    for buffer_size in [10**3]:
+        for ep_greedy in [.01]:
+            for noise_displacement in [.1]:
 
                 begin = datetime.now()
-            #     name_run = RDPG(amplitude=amplitude, total_episodes=7*10**4, dolinar_layers=dolinar_layers, noise_displacement=noise_displacement, tau=tau,
-            # buffer_size=buffer_size, batch_size=batch_size, lr_critic=lr_critic, lr_actor=lr_actor, ep_guess=ep_greedy, reduce_noise=reduce_noise)
+                name_run = RDPG(amplitude=amplitude, total_episodes=10**2, dolinar_layers=dolinar_layers, noise_displacement=noise_displacement, tau=tau,
+            buffer_size=buffer_size, batch_size=batch_size, lr_critic=lr_critic, lr_actor=lr_actor, ep_guess=ep_greedy, reduce_noise=reduce_noise)
 
-                # infos_run +="***\n***\nname_run: {} ***\n\n\n\n Some details: \n\n tau: {}\nlr_critic: {}\nnoise_displacement: {}\nbatch_size: {}\n-------\n-------\n\n".format(name_run,tau, lr_critic, noise_displacement, batch_size)
-                # infos_run += "Noise reduction: {} \nep_guess: {}".format(reduce_noise, ep_guess)
+
                 info_runs+="name_run: {}\ntotal_time: {}\nbuffer_size: {}\nep_greedy: {}\n noise_displacement: {}\nbatch_size: {}\n".format(name_run,str(datetime.now()- begin), buffer_size, ep_greedy, noise_displacement,batch_size)
-                name_run+=1
 
 
 

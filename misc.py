@@ -256,11 +256,20 @@ class PolicyEvaluator(Basics):
 
         """
         actor.reset_states()
+        preds_actor = []
         rr = np.ones((2**(self.dolinar_layers-1), self.dolinar_layers, 1))*actor.pad_value
+
         if self.dolinar_layers != 1:
             rr[:,1:] = np.reshape(outcomes_universe(self.dolinar_layers-1),(2**(self.dolinar_layers-1), self.dolinar_layers-1,1))
-        rr = np.reshape(rr.repeat(actor.batch_size_info),(actor.batch_size_info,)+rr.shape[1:])
-        preds = np.squeeze(actor(rr)[0])
+            for k in rr:
+                preds_actor.append(np.squeeze(actor(np.reshape(k.repeat(actor.batch_size_info), (actor.batch_size_info,)+rr.shape[1:])))[0])
+                actor.reset_states()
+            preds = preds_actor
+        else:
+            rr = np.reshape(rr.repeat(actor.batch_size_info),(actor.batch_size_info,)+rr.shape[1:])
+            preds = np.squeeze(actor(rr)[0])
+
+
 
         if self.dolinar_layers==1:
             history = preds
@@ -291,7 +300,7 @@ class PolicyEvaluator(Basics):
                     if max_like_guess:
                         self.history_tree[str(self.dolinar_layers)][str(np.append(ot,final_outcome))] = self.possible_phases[self.give_max_lik_guess(final_history)]
                     else:
-                        self.history_tree[str(self.dolinar_layers)][str(np.append(ot,final_outcome))] = self.possible_phases[critic.give_favourite_guess(final_history)[0]]
+                        self.history_tree[str(self.dolinar_layers)][str(np.append(ot,final_outcome))] = self.possible_phases[critic.give_favourite_guess(final_history)]
             return self.success_probability(self.history_tree)
 
 
@@ -354,7 +363,7 @@ def optimization_step(sampled_from_buffer, critic, critic_target, actor, actor_t
     labels_critic = critic_target.give_td_errors_tf( batched_input, zeroed_rews)
     loss_critic = critic.step_critic_tf(batched_input ,labels_critic, optimizer_critic)
 
-    if current_episode > 10**3:
+    if current_episode > 500:
         actor.reset_states()
         actored_experiences = actor.process_sequence_of_experiences_tf(sampled_from_buffer)
         dq_da = tf.clip_by_value(critic.critic_grad_tf(actored_experiences), -10e-5, 10e-5) ### To do, check if this does the correct thing for L>1
