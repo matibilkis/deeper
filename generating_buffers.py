@@ -36,7 +36,7 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
         for layer in range(actor.dolinar_layers):
             # beta_would_do = np.squeeze(actor(context_outcome_actor))
             # beta =  beta_would_do + np.random.uniform(-noise_displacement, noise_displacement)#np.clip(,-2*amplitude,2*amplitude)
-            beta = np.random.choice(np.arange(-1.0,1.0,.001))
+            beta = np.random.choice(np.arange(-1.0,1.0,.1))
             outcome = env.give_outcome(beta,layer)
             outcomes_so_far.append(int(outcome))
             experiences.append(beta)
@@ -46,11 +46,11 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
 
         guess_index = np.random.choice(range(number_phases),1)[0]
         experiences.append(guess_index)
-        reward = env.give_reward(guess_index, modality="bit_stochastic")#, history = experiences[:-1])
+        reward = env.give_reward(guess_index)#, modality="pt",history = experiences[:-1])
         experiences.append(reward)
         buffer.add(tuple(experiences))
 
-    np.save("buffers/1L_stoch_big",buffer.sample(buffer.buffer_size) )
+    np.save("buffers/2L_r",buffer.sample(buffer.buffer_size) )
     return
 
 
@@ -63,7 +63,7 @@ if __name__ == "__main__":
     lr_actor=10**-4
     noise_displacement = 1.
     ep_guess=0.01
-    dolinar_layers=1
+    dolinar_layers=2
     number_phases=2
     buffer_size = 10**6.
     #no_delete_variables =

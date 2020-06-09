@@ -24,12 +24,12 @@ class Critic(tf.keras.Model):
         self.lstm = tf.keras.layers.LSTM(30, return_sequences=True, input_shape=(None,2))#,kernel_regularizer=tf.keras.regularizers.l2(0.11), bias_regularizer=tf.keras.regularizers.l2(0.1)) #input_shape = (time_steps, features)
 
         self.tau = tau
-        # self.l1 = Dense(10,kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
-        # bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val))
+        self.l1 = Dense(10,kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
+        bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val))
 
-    #     self.l2 = Dense(250, kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
+        # self.l2 = Dense(10, kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
     # bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val))
-    #
+
     #     self.l3 = Dense(250, kernel_initializer=tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val),
     # bias_initializer = tf.random_uniform_initializer(minval=-seed_val, maxval=seed_val))
 
@@ -54,7 +54,7 @@ class Critic(tf.keras.Model):
         feat = tf.squeeze(self.mask(tf.expand_dims(inputs, axis=-1)), axis=-1)
         feat= self.lstm(feat)
         #feat = tf.nn.dropout(feat, rate=self.dropout_rate)
-        # feat = self.l1(feat)
+        feat = tf.nn.sigmoid(self.l1(feat))
         #feat = tf.nn.dropout(feat, rate=self.dropout_rate)
         # feat = tf.nn.sigmoid(self.l2(feat))
         # feat = tf.nn.sigmoid(self.l3(feat))

@@ -120,6 +120,8 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
 
         experiences.append(guess_index)
         reward = env.give_reward(guess_index, modality="bit_stochastic", history = experiences[:-1])
+        # reward = env.give_reward(guess_index, modality="pt", history = experiences[:-1])
+
         experiences.append(reward)
 
         buffer.add(tuple(experiences))
@@ -186,7 +188,7 @@ def RDPG(special_name="", amplitude=0.4, dolinar_layers=2, number_phases=2, tota
 
     for model, net_folder in zip([actor, actor_target, critic, critic_target],["actor_primary", "actor_target", "critic_primary", "critic_target"]):
         model.save_weights(directory+"/networks/"+net_folder+"/")
-    just_plot(rrt, pt, avg_train, env.helstrom(), policy_evaluator, directory)
+    just_plot(rrt, pt_max_like, avg_train, env.helstrom(), policy_evaluator, directory)
     if dolinar_layers  ==1:
         profiles_kennedy(critic, directory, history_predictions)
     # BigPlot(buffer,rt, pt, history_betas, history_betas_would_have_done, histo_preds, losses, directory)
@@ -203,7 +205,7 @@ dolinar_layers=2
 number_phases=2
 tau = 0.01
 batch_size=7
-noise_displacement=1.
+noise_displacement=.05
 reduce_noise=True
 
 
@@ -213,7 +215,7 @@ info_runs="::Information on all runs::\n\n"
 for batch_size in [16]:
     for buffer_size in [10**3]:
         for ep_greedy in [.01]:
-            for noise_displacement in [.1, .05]:
+            for noise_displacement in [.5,.05]:
 
                 begin = datetime.now()
                 name_run = RDPG(amplitude=amplitude, total_episodes=10**2, dolinar_layers=dolinar_layers, noise_displacement=noise_displacement, tau=tau,
