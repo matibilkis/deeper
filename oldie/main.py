@@ -212,6 +212,8 @@ reduce_noise=True
 
 name_run=0
 info_runs="::Information on all runs::\n\n"
+print("CARO TONTA")
+print(giq4ever)
 for batch_size in [16]:
     for buffer_size in [10**3]:
         for ep_greedy in [.01]:

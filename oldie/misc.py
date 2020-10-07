@@ -125,8 +125,9 @@ class Basics():
 
         self.dolinar_layers = dolinar_layers
         self.number_phases = number_phases
-        self.ats = self.make_attenuations(self.dolinar_layers) #Bob uses this if she knows the model
+        self.at = self.make_attenuations(self.dolinar_layers) #Bob uses this if she knows the model
         self.amplitude = amplitude
+
         self.possible_phases=[]
         for k in croots(self.number_phases):
             self.possible_phases.append(np.round(k,10))
