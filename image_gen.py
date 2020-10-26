@@ -2,7 +2,7 @@ import numpy as np
 from misc import Prob, Basics
 import matplotlib.pyplot as plt
 import argparse
-from nets import RNNC
+from nets import RNN
 from glob import glob
 from tqdm import tqdm
 import os
@@ -21,6 +21,15 @@ for k in range(4):
         stoppings.append(kk)
 for j in range(1,4):
     stoppings.append(j*10**4)
+
+from glob import glob
+ids=[]
+for k in glob("net_{}/*.index".format(args.names)):
+    k=k.replace("net_{}/".format(args.names),'')
+    k=k.replace(".index",'')
+    ids.append(int(k))
+
+stoppings = ids
 
 
 basics = Basics(dolinar_layers=2)
@@ -61,7 +70,7 @@ for nn in [0.,1.]:
     for b in betas:
         data_test[str(nn)].append([[b1,-1.],[b,nn]])
 
-net = RNNC()
+net = RNN()
 for epoch in tqdm(stoppings):
     net.load_weights("net_{}/".format(str(args.names))+str(epoch))
     plt.figure(figsize=(10,10))
@@ -73,10 +82,16 @@ for epoch in tqdm(stoppings):
     axs = {0:ax1,1:ax2}
     c=0
     for nn in [0.,1.]:
-        axs[c].plot(betas, np.squeeze(net(np.reshape(data_test[str(nn)], (len(data_test[str(nn)]), 2,2))))[:,1], alpha=0.7, color="blue", linewidth=5)
+        preds = net(np.reshape(data_test[str(nn)], (len(data_test[str(nn)]), 2,2)))
+        axs[c].plot(betas,np.squeeze(preds[:,1]), alpha=0.7, color="blue", linewidth=5)
         axs[c].plot(betas, [Q2(b1,nn,b) for b in betas], '--', label="Q2", alpha=0.7, linewidth=5, color="red")
         c+=1
-    ax3.plot(betas,np.squeeze(net(np.expand_dims(test1, axis=0))), alpha=0.7, color="blue", linewidth=5)
-    ax3.plot(betas, [Q1(b) for b in betas], '--', label="Q1", alpha=0.7, linewidth=5, color="red")
 
+
+    dt = []
+    for b in betas:
+        dt.append([[b,-1.]])
+
+    ax3.plot(betas,np.squeeze(net(np.array(dt))), alpha=0.7, color="blue", linewidth=5)
+    ax3.plot(betas, [Q1(b) for b in betas], '--', label="Q1", alpha=0.7, linewidth=5, color="red")
     plt.savefig("evs_{}/{}.png".format(str(args.names),epoch))

@@ -1,18 +1,23 @@
 import imageio
 from glob import glob
+import numpy as np
 
 
-images = []
+for n in [8,64,512, 1600]:
+    images = []
 
-for n in [1,2]:
+    ids=[]
+    for k in glob("net_{}/*.index".format(n)):
+        k=k.replace("net_{}/".format(n),'')
+        k=k.replace(".index",'')
+        if int(k) not in ids:
+            ids.append(int(k))
+    stoppings = ids
+    stoppings = np.sort(stoppings)
 
-    stoppings = []
-    for k in range(4):
-        for kk in range(10**k,10**(k+1),10**k):
-            stoppings.append(kk)
     filenames=[]
-    for k in stoppings:
-        filenames.append("evs_{}/{}.png".format(n,k))
+    for kk in stoppings:
+        filenames.append("evs_{}/{}.png".format(n,kk))
     for filename in filenames:
         images.append(imageio.imread(filename))
-    imageio.mimsave('clipped_movie_lmm_{}.gif'.format(n), images, **{"duration":1})
+    imageio.mimsave('clipped_movie_lmm_{}.gif'.format(n), images, **{"duration":.5})

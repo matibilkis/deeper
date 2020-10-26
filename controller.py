@@ -6,7 +6,6 @@ def fun(v):
     os.system("python3 train.py --lr "+str(lr) + " --bs "+str(bs)+ " --its "+str(10**4))
 
 
-
 vals=[]
 for lr in [0.01]:
     for bs in [8, 64, 128]:
