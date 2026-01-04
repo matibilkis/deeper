@@ -1,4 +1,4 @@
 """
-Unit tests for quantum-receiver-rl package.
+Unit tests for deeper package.
 """
 

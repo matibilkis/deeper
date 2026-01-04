@@ -1,4 +1,4 @@
-# Core dependencies for quantum-receiver-rl: Deep RL for Quantum Receiver Optimization
+# Core dependencies for deeper: Deep RL for Quantum Receiver Optimization
 # TensorFlow and deep learning
 tensorflow>=2.0.0,<3.0.0
 

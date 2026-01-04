@@ -1,6 +1,6 @@
 # Tests
 
-This directory contains unit tests for the quantum-receiver-rl package.
+This directory contains unit tests for the deeper package.
 
 ## Quick Start
 

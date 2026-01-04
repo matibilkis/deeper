@@ -79,8 +79,8 @@ The main components include:
 
 ```bash
 # Clone the repository
-git clone https://github.com/matibilkis/quantum-receiver-rl.git
-cd quantum-receiver-rl
+git clone https://github.com/matibilkis/deeper.git
+cd deeper
 
 # Install dependencies (example - adjust versions as needed)
 pip install tensorflow>=2.0.0
@@ -135,7 +135,7 @@ This is a research repository. For questions or collaboration, please open an is
 
 ## License
 
-[Specify your license here]
+MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Author
 
