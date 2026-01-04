@@ -1,0 +1,25 @@
+# Core dependencies for quantum-receiver-rl: Deep RL for Quantum Receiver Optimization
+# TensorFlow and deep learning
+tensorflow>=2.0.0,<3.0.0
+
+# Scientific computing
+numpy>=1.18.0
+pandas>=1.0.0
+
+# Visualization
+matplotlib>=3.0.0
+
+# Utilities
+tqdm>=4.50.0
+
+# Jupyter (for notebooks)
+jupyter>=1.0.0
+ipykernel>=5.0.0
+
+# Testing
+pytest>=6.0.0
+pytest-cov>=2.0.0
+
+# Optional: for configuration files
+pyyaml>=5.0.0
+
